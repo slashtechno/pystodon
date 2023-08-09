@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "disagreeable-posts"
+version = "0.1.0"
+description = ""
+authors = ["slashtechno <77907286+slashtechno@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "disagreeable_posts"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+mastodon-py = "^1.8.1"
+python-dotenv = "^1.0.0"
+trio = "^0.22.2"
+loguru = "^0.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
