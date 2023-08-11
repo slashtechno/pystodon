@@ -1,3 +1,4 @@
+import json
 from loguru import logger
 from mastodon import Mastodon, StreamListener
 from dotenv import load_dotenv
@@ -5,7 +6,6 @@ import trio
 from pathlib import Path
 import os
 from sys import stderr
-import json
 
 def main():
     load_dotenv(dotenv_path=Path('.') / '.env')
@@ -22,10 +22,10 @@ def main():
     # Now show the username
     logger.info(f"Logged in as {mastodon.account_verify_credentials()['username']}")
     # Hello, Mastodon API!
-    mastodon.status_post("Hello, Mastodon API!", idempotency_key='Hello, Mastodon API!')
+    mastodon.status_post("Hello, Mastodon API!", idempotency_key='test-hello')
     logger.info("Posted to Mastodon API")
     # Testing hashtags now
-    mastodon.status_post("Hello, Mastodon API! #test", idempotency_key='Hello, Mastodon API! #test') # noqa E501
+    mastodon.status_post("Hello, Mastodon API! #test", idempotency_key='test-hashtag') # noqa E501
 
     # Stream public timeline asynchronously
     # logger.info("Starting public stream")
@@ -52,33 +52,36 @@ def main():
 
 class TheStreamListener(StreamListener):
     def on_update(self, status):
-        logger.info(f"Got update: {status['content']}") 
+        # An uodate is a post made by you
+        logger.info(f"Got update: {status['content']} of type {status['type']}")  # noqa E501
+        
+        # `default` is a parameter which sets a function to be called for objects that can't otherwise be serialized.  # noqa E501
+        # In this case, it will call str(x) for any object x that it can't serialize.  # noqa E501
+        # logger.info(f"JSON: {json.dumps(status, indent=4, default=str)}")
+
         # https://docs.joinmastodon.org/entities/Status/
         # https://docs.joinmastodon.org/entities/Notification/
     def on_notification(self, notification):
         if notification['type'] == 'mention':
-            logger.info(f"Got <blue>mention</blue> from {notification['account']['username']}")  # noqa E501
-            logger.info(f"Content: {notification['status']['content']}")
-            logger.info(f"ID: {notification['status']['id']}")
-            logger.info(f"URL: {notification['status']['url']}")
-            logger.info(f"Visibility: {notification['status']['visibility']}")
-            logger.info(f"Sensitive: {notification['status']['sensitive']}")
-        if notification['type'] == 'favourite':
-            logger.info(f"Got <yellow>favourite</yellow> from {notification['account']['username']}")  # noqa E501
-            logger.info(f"Content: {notification['status']['content']}")
-            logger.info(f"ID: {notification['status']['id']}")
-            logger.info(f"URL: {notification['status']['url']}")
-            logger.info(f"Visibility: {notification['status']['visibility']}")
-            logger.info(f"Sensitive: {notification['status']['sensitive']}")
+            logger.opt(colors=True).info(f"Got <blue>mention</blue> from {notification['account']['username']}") # noqa E501
+        elif notification['type'] == 'favourite':
+            logger.opt(colors=True).info(f"Got <yellow>favourite</yellow> from {notification['account']['username']}")  # noqa E501
         else: 
-            logger.info(f"Got {notification['type']} from {notification['account']['username']}")  # noqa E501
+            logger.info(f"Got unknown notification: {notification['type']} from {notification['account']['username']}")  # noqa E501
+        logger.info(f"Content: {notification['status']['content']}")
+        logger.info(f"ID: {notification['status']['id']}")
+        logger.info(f"URL: {notification['status']['url']}")
+        logger.info(f"Visibility: {notification['status']['visibility']}")
+        logger.info(f"Sensitive: {notification['status']['sensitive']}")
 
 
 
 def set_primary_logger(log_level):
-    logger.remove()
-    # ^10 is a formatting directive to center with a padding of 10
+    global logger
+    logger.remove() 
+    # ^10 is a formatting directive to center witzh a padding of 10
     logger_format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> |<level>{level: ^10}</level>| <level>{message}</level>"  # noqa E501
     logger.add(stderr, format=logger_format, colorize=True, level=log_level)
+    # logger = logger.opt(ansi=True)# noqa F841
 
 main()
