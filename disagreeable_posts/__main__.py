@@ -8,7 +8,10 @@ import os
 from sys import stderr
 import datetime
 
+mastodon = Mastodon
+
 def main():
+    global mastodon
     load_dotenv(dotenv_path=Path('.') / '.env')
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     api_base_url = os.getenv("MASTODON_API_BASE_URL")
@@ -65,6 +68,8 @@ class TheStreamListener(StreamListener):
     def on_notification(self, notification):
         if notification['type'] == 'mention':
             logger.opt(colors=True).info(f"Got <blue>mention</blue> from {notification['account']['username']}") # noqa E501
+            mastodon.status_post(f"Hello, @{notification['account']['acct']}", in_reply_to_id=notification['status']['id'])
+            
         elif notification['type'] == 'favourite':
             logger.opt(colors=True).info(f"Got <yellow>favourite</yellow> from {notification['account']['username']}")  # noqa E501
         else: 
