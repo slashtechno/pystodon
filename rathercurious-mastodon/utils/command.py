@@ -103,8 +103,16 @@ class Command:
             return None
         
     #    Run the command
-        for command in commands:
-            if hashtag == command.hashtag:
-                return command.function(status)
-    #   Return None if no command matches
-        return None
+        if hashtag == 'help':
+            content = 'Commands:\n'
+            for command in commands:
+                content += f'\n#{command.hashtag}\n'
+                for argument, help_text in command.arguments.items():
+                    content += f'#{command.hashtag} {argument}: {help_text}\n'
+            return content
+        else:
+            for command in commands:
+                if hashtag == command.hashtag:
+                    return command.function(status)
+            # Return None if no command matches
+            return None

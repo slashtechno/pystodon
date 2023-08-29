@@ -13,17 +13,21 @@ from .utils.command import Command
 
 # Global variables
 mastodon = Mastodon
-delete_when_done = []
+posts_to_delete = []
+delete_when_done = None
 
 def main():
     global mastodon
+    global delete_when_done
     load_dotenv(dotenv_path=Path(".") / ".env")
-    access_token = os.getenv("MASTODON_ACCESS_TOKEN")
-    api_base_url = os.getenv("MASTODON_API_BASE_URL")
+    access_token = os.getenv("RC_MASTODON_ACCESS_TOKEN")
+    api_base_url = os.getenv("RC_MASTODON_API_BASE_URL")
+    delete_when_done = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
 
 
     set_primary_logger("DEBUG")
 
+    logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(delete_when_done))
 
     # Setup commands
     # Test command that returns "test"
@@ -32,6 +36,13 @@ def main():
             hashtag="test",
             function = lambda status: "test",
             arguments={}
+        )
+    )
+    Command.add_command(
+        Command(
+            hashtag="test2",
+            function = lambda status: "test2",
+            arguments={"TestParameter": "Test!"}
         )
     )
     Command.add_command(
@@ -72,9 +83,11 @@ async def sleep_or_not(stream):
             nursery.start_soon(print_time)
     except KeyboardInterrupt:
         logger.info("Stopping user stream")
-        # for status in delete_when_done:
-            # mastodon.status_delete(status)
-            # logger.info(f"Deleted {status}")
+        logger.debug(delete_when_done)
+        if delete_when_done:
+            logger.info("Deleting posts")
+            for post in posts_to_delete:
+                mastodon.status_delete(post)
     
 
 async def print_time():
@@ -104,7 +117,7 @@ class TheStreamListener(StreamListener):
                 content,
                 in_reply_to_id=notification["status"]["id"],
             )
-            delete_when_done.append(post["id"])
+            posts_to_delete.append(post["id"])
 
         elif notification["type"] == "favourite":
             logger.opt(colors=True).info(

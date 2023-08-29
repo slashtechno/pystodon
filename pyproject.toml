@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "disagreeable-posts"
+name = "rathercurious-mastodon"
 version = "0.1.0"
 description = ""
 authors = ["slashtechno <77907286+slashtechno@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "disagreeable_posts"}]
+packages = [{include = "rathercurious-mastodon"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
