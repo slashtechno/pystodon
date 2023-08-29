@@ -5,7 +5,7 @@ class Command:
     '''
     Functions and stuff related to adding and commands to Mastodon.py so that a reply will be made to "@<bot> #<command> <arguments>".
     '''
-    def __init__(self, hashtag, function: callable, func, arguments: dict = {}):
+    def __init__(self, hashtag, function: callable, arguments: dict = {}):
         self.hashtag = hashtag
         self.function = function
         self.arguments = arguments
@@ -89,7 +89,7 @@ class Command:
         '''
         Parse a status object and return a tuple of the hashtag and the arguments. 
         If no command matches, return None. 
-        Otherwise, a status dict of the reply will be returned.
+        Otherwise, the content that needs to be posted is returned
         '''
 
     

@@ -12,6 +12,7 @@ mastodon-py = "^1.8.1"
 python-dotenv = "^1.0.0"
 trio = "^0.22.2"
 loguru = "^0.7.0"
+trafilatura = "^1.6.1"
 
 
 [tool.poetry.group.dev.dependencies]

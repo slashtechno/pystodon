@@ -6,6 +6,9 @@ from pathlib import Path
 import os
 from sys import stderr
 import datetime
+import re
+from .utils.command import Command
+
 
 # Global variables
 mastodon = Mastodon
@@ -17,19 +20,32 @@ def main():
     access_token = os.getenv("MASTODON_ACCESS_TOKEN")
     api_base_url = os.getenv("MASTODON_API_BASE_URL")
 
+
     set_primary_logger("DEBUG")
+
+
+    # Setup commands
+    # Test command that returns "test"
+    Command.add_command(
+        Command(
+            hashtag="test",
+            function = lambda status: "test",
+            arguments={}
+        )
+    )
 
     # Now login
     mastodon = Mastodon(access_token=access_token, api_base_url=api_base_url)
     # Now show the username
     logger.info(f"Logged in as {mastodon.account_verify_credentials()['username']}")
+    
     # Hello, Mastodon API!
-    mastodon.status_post("Hello, Mastodon API!", idempotency_key="test-hello")
-    logger.info("Posted to Mastodon API")
+    # mastodon.status_post("Hello, Mastodon API!", idempotency_key="test-hello")
+    # logger.info("Posted to Mastodon API")
     # Testing hashtags now
-    mastodon.status_post(
-        "Hello, Mastodon API! #test", idempotency_key="test-hashtag"
-    )  # noqa E501
+    # mastodon.status_post(
+        # "Hello, Mastodon API! #test", idempotency_key="test-hashtag"
+    # ) 
 
     logger.info("Starting user stream")
     stream = mastodon.stream_user(TheStreamListener(), run_async=True)
@@ -45,9 +61,9 @@ async def sleep_or_not(stream):
             nursery.start_soon(print_time)
     except KeyboardInterrupt:
         logger.info("Stopping user stream")
-        # for status in delete_when_done:
-        #     mastodon.status_delete(status)
-        #     logger.info(f"Deleted {status}")
+        for status in delete_when_done:
+            mastodon.status_delete(status)
+            logger.info(f"Deleted {status}")
     
 
 async def print_time():
@@ -57,7 +73,7 @@ async def print_time():
 
 class TheStreamListener(StreamListener):
     def on_update(self, status):
-        # An uodate is a post made by you
+        # As far as I can tell, an update caused when you reblog or when an account you follow posts something  # noqa E501
         logger.info(f"Got update: {status['content']}")  # noqa E501
 
         # `default` is a parameter which sets a function to be called for objects that can't otherwise be serialized.  # noqa E501
@@ -72,12 +88,12 @@ class TheStreamListener(StreamListener):
             logger.opt(colors=True).info(
                 f"Got <blue>mention</blue> from {notification['account']['username']}"
             )
+            content = Command.parse_status(notification["status"])
             post = mastodon.status_post(
-                f"Hello, @{notification['account']['acct']}",
+                content,
                 in_reply_to_id=notification["status"]["id"],
             )
             delete_when_done.append(post["id"])
-
 
         elif notification["type"] == "favourite":
             logger.opt(colors=True).info(
@@ -87,7 +103,8 @@ class TheStreamListener(StreamListener):
             logger.info(
                 f"Got unknown notification: {notification['type']} from {notification['account']['username']}"  # noqa E501
             )
-        logger.info(f"Content: {notification['status']['content']}")
+        logger.debug(f"Content: {notification['status']['content']}")
+        # logger.info(f"Text content: {content}")
         logger.info(f"ID: {notification['status']['id']}")
         logger.info(f"URL: {notification['status']['url']}")
         logger.info(f"Visibility: {notification['status']['visibility']}")
