@@ -6,7 +6,8 @@ from pathlib import Path
 import os
 from sys import stderr
 import datetime
-import re
+from . import commands
+
 from .utils.command import Command
 
 
@@ -33,6 +34,16 @@ def main():
             arguments={}
         )
     )
+    Command.add_command(
+        Command(
+            hashtag="timezone",
+            function = commands.timezone,
+            arguments={
+                "timezone": "The timezone to get the time in. For a list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"  # noqa E501
+            }
+        )
+    )
+
 
     # Now login
     mastodon = Mastodon(access_token=access_token, api_base_url=api_base_url)
