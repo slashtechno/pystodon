@@ -72,9 +72,9 @@ async def sleep_or_not(stream):
             nursery.start_soon(print_time)
     except KeyboardInterrupt:
         logger.info("Stopping user stream")
-        for status in delete_when_done:
-            mastodon.status_delete(status)
-            logger.info(f"Deleted {status}")
+        # for status in delete_when_done:
+            # mastodon.status_delete(status)
+            # logger.info(f"Deleted {status}")
     
 
 async def print_time():
