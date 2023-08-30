@@ -10,7 +10,6 @@ from . import commands
 
 from .utils.command import Command
 
-
 # Global variables
 mastodon = Mastodon
 posts_to_delete = []

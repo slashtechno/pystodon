@@ -1,5 +1,5 @@
 import re
-import trafilatura  
+from . import utils
 
 class Command:
     '''
@@ -87,9 +87,8 @@ class Command:
     @staticmethod
     def parse_status(status, commands: list = commands):
         '''
-        Parse a status object and return a tuple of the hashtag and the arguments. 
+        Parse the status dict and call the appropriate command, passing the status dict
         If no command matches, return None. 
-        Otherwise, the content that needs to be posted is returned
         '''
 
     
@@ -97,7 +96,7 @@ class Command:
             return None 
         
         # Get the hashtag
-        if matches := re.search(r'#(\w+)', trafilatura.extract(status['content'])):
+        if matches := re.search(r'#(\w+)', utils.parse_html(status['content'])):
             hashtag = matches.group(1)
         else:
             return None
