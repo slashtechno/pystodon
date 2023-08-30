@@ -12,6 +12,7 @@ def return_raw_argument(status: dict):
     # re.DOTALL is present so commands can span multiple lines
     if matches := re.search(
         r'^(?:@\w+\s+)(?:#\w+\s+)(.+)$', 
+        # TODO: mke mention optional as the "@<account" will not be present if it's a reply
         content, 
         flags=re.IGNORECASE | re.DOTALL
         ):
@@ -28,5 +29,4 @@ def parse_html(html_content:str):
         p.insert_after('\n')
         # Perhaps don't insert a newline if it's the last <p> tag?
     raw_content = content.get_text(separator='')
-    print(raw_content) # FOR DEBUGGING!
     return raw_content

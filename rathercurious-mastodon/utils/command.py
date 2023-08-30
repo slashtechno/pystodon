@@ -1,14 +1,18 @@
 import re
 from . import utils
 
+
+
 class Command:
     '''
     Functions and stuff related to adding and commands to Mastodon.py so that a reply will be made to "@<bot> #<command> <arguments>".
     '''
-    def __init__(self, hashtag, function: callable, arguments: dict = {}):
+    def __init__(self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs): # noqa E501
         self.hashtag = hashtag
         self.function = function
-        self.arguments = arguments
+        self.function_args = args
+        self.function_kwargs = kwargs
+        self.help_arguments = help_arguments
     
     # Setters/Getters
     @property
@@ -40,17 +44,38 @@ class Command:
             raise TypeError('Function must be callable')
     
     @property
-    def arguments(self):
+    def function_args(self):
+        '''Get the function arguments'''
+        return self._function_args
+    @function_args.setter
+    def function_args(self, function_args):
+        '''Set the function arguments'''
+        self._function_args = function_args
+    @property
+    def function_kwargs(self):
+        '''Get the function keyword arguments'''
+        return self._function_kwargs
+    @function_kwargs.setter
+    def function_kwargs(self, function_kwargs):
+        '''Set the function keyword arguments'''
+        self._function_kwargs = function_kwargs
+
+
+
+    @property
+    def help_arguments(self):
         '''Get the arguments'''
-        return self._arguments
-    @arguments.setter
-    def arguments(self, arguments):
+        return self._help_arguments
+    @help_arguments.setter
+    def help_arguments(self, help_arguments):
         '''
         Set arguments and their help text.
-        # This is used for the help command as well.
+        This is used for the help command
+
+        Please note, these arguments are not passed to the function, for that, use *args and **kwargs # noqa E501
         '''
-        if isinstance(arguments, dict):
-            self._arguments = arguments
+        if isinstance(help_arguments, dict):
+            self._help_arguments = help_arguments
         else:
             raise TypeError('Arguments must be a dictionary')
     
@@ -87,9 +112,12 @@ class Command:
     @staticmethod
     def parse_status(status, commands: list = commands):
         '''
-        Parse the status dict and call the appropriate command, passing the status dict
+        Parse the status dict and call the appropriate command
+        It passes the status dict, as well as any args and kwargs.
+        Please note that the status dict is passed as the first argument.
         If no command matches, return None. 
         '''
+        # TODO: Also pass args
 
     
         if commands == []:
@@ -106,12 +134,13 @@ class Command:
             content = 'Commands:\n'
             for command in commands:
                 content += f'\n#{command.hashtag}\n'
-                for argument, help_text in command.arguments.items():
+                for argument, help_text in command.help_arguments.items():
                     content += f'#{command.hashtag} {argument}: {help_text}\n'
             return content
         else:
             for command in commands:
                 if hashtag == command.hashtag:
-                    return command.function(status)
+                    # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments # noqa E501
+                    return command.function(status, *command.function_args, **command.function_kwargs)
             # Return None if no command matches
             return None

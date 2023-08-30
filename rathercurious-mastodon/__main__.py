@@ -2,6 +2,7 @@ from loguru import logger
 from mastodon import Mastodon, StreamListener
 from dotenv import load_dotenv
 import trio
+import httpx
 from pathlib import Path
 import os
 from sys import stderr
@@ -14,41 +15,61 @@ from .utils.command import Command
 mastodon = Mastodon
 posts_to_delete = []
 delete_when_done = None
+WEATHER_API_KEY = None
 
 def main():
     global mastodon
     global delete_when_done
     load_dotenv(dotenv_path=Path(".") / ".env")
-    access_token = os.getenv("RC_MASTODON_ACCESS_TOKEN")
-    api_base_url = os.getenv("RC_MASTODON_API_BASE_URL")
-    delete_when_done = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
+    mastodon_access_token = os.getenv("RC_MASTODON_ACCESS_TOKEN")
+    mastodon_api_base_url = os.getenv("RC_MASTODON_API_BASE_URL")
+    WEATHER_API_KEY = os.getenv("RC_WEATHER_API_KEY")
 
+    delete_when_done = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
 
     set_primary_logger("DEBUG")
 
     logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(delete_when_done))
 
+    # Setup config
+    try:
+        set_weather_key(WEATHER_API_KEY)
+    except ValueError as e:
+        if str(e) == "Invalid API key":
+            logger.error("Invalid API key")
+            exit(1)
+        else:
+            raise e
+
+        
     # Setup commands
     # Test command that returns "test"
     Command.add_command(
         Command(
             hashtag="test",
             function = lambda status: "test",
-            arguments={}
+            help_arguments={}
         )
     )
+
+    # Weather command
     Command.add_command(
         Command(
-            hashtag="test2",
-            function = lambda status: "test2",
-            arguments={"TestParameter": "Test!"}
+            hashtag="weather",
+            function = commands.weather,
+            help_arguments={
+                "Latitude, Longitude": "The latitude and longitude to get the weather for. For example, 51.5074, 0.1278"  # noqa E501
+            },
+            weather_api_key=WEATHER_API_KEY
         )
     )
+
+    # Timezone command
     Command.add_command(
         Command(
             hashtag="timezone",
             function = commands.timezone,
-            arguments={
+            help_arguments={
                 "timezone": "The timezone to get the time in. For a list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"  # noqa E501
             }
         )
@@ -56,7 +77,7 @@ def main():
 
 
     # Now login
-    mastodon = Mastodon(access_token=access_token, api_base_url=api_base_url)
+    mastodon = Mastodon(access_token=mastodon_access_token, api_base_url=mastodon_api_base_url)
     # Now show the username
     logger.info(f"Logged in as {mastodon.account_verify_credentials()['username']}")
     
@@ -116,6 +137,7 @@ class TheStreamListener(StreamListener):
                 content,
                 in_reply_to_id=notification["status"]["id"],
             )
+            # TODO: If the incoming message is a DM, send a DM back, not a public reply
             posts_to_delete.append(post["id"])
 
         elif notification["type"] == "favourite":
@@ -142,5 +164,18 @@ def set_primary_logger(log_level):
     logger.add(stderr, format=logger_format, colorize=True, level=log_level)
     # logger = logger.opt(ansi=True)# noqa F841
 
+def set_weather_key(key: str):
+    """If an API key works, set the class API key."""
+    # Test API key to make sure it works
+    params = {"key": key, "aqi": "no", "q": "London"}
+    url = "https://api.weatherapi.com/v1/current.json"
+    response = httpx.get(url=url, params=params)
+    if response.status_code == 200:
+        WEATHER_API_KEY = key
+    elif response.status_code == 403:
+        raise ValueError("Invalid API key")
+    else:
+        response.raise_for_status()
+    
 
 main()
