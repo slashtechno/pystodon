@@ -14,26 +14,31 @@ from .utils.command import Command
 # Global variables
 mastodon = Mastodon
 posts_to_delete = []
-delete_when_done = None
-WEATHER_API_KEY = None
+DELETE_WHEN_DONE = None
+weather_api_key = None
+ALWAYS_MENTION = None
 
 def main():
     global mastodon
-    global delete_when_done
+    global DELETE_WHEN_DONE
+    global ALWAYS_MENTION
+
     load_dotenv(dotenv_path=Path(".") / ".env")
     mastodon_access_token = os.getenv("RC_MASTODON_ACCESS_TOKEN")
     mastodon_api_base_url = os.getenv("RC_MASTODON_API_BASE_URL")
-    WEATHER_API_KEY = os.getenv("RC_WEATHER_API_KEY")
+    weather_api_key = os.getenv("RC_WEATHER_API_KEY")
 
-    delete_when_done = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
+
+    DELETE_WHEN_DONE = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
+    ALWAYS_MENTION = os.getenv("RC_ALWAYS_MENTION", "False").lower() == "true"
 
     set_primary_logger("DEBUG")
 
-    logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(delete_when_done))
+    logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(DELETE_WHEN_DONE))
 
     # Setup config
     try:
-        set_weather_key(WEATHER_API_KEY)
+        set_weather_key(weather_api_key)
     except ValueError as e:
         if str(e) == "Invalid API key":
             logger.error("Invalid API key")
@@ -60,7 +65,7 @@ def main():
             help_arguments={
                 "Latitude, Longitude": "The latitude and longitude to get the weather for. For example, 51.5074, 0.1278"  # noqa E501
             },
-            weather_api_key=WEATHER_API_KEY
+            weather_api_key=weather_api_key
         )
     )
 
@@ -103,8 +108,8 @@ async def sleep_or_not(stream):
             nursery.start_soon(print_time)
     except KeyboardInterrupt:
         logger.info("Stopping user stream")
-        logger.debug(delete_when_done)
-        if delete_when_done:
+        logger.debug(DELETE_WHEN_DONE)
+        if DELETE_WHEN_DONE:
             logger.info("Deleting posts")
             for post in posts_to_delete:
                 mastodon.status_delete(post)
@@ -132,12 +137,15 @@ class TheStreamListener(StreamListener):
             logger.opt(colors=True).info(
                 f"Got <blue>mention</blue> from {notification['account']['username']}"
             )
-            content = Command.parse_status(notification["status"])
+            content = Command.parse_status(status=notification["status"], always_mention=ALWAYS_MENTION)
             post = mastodon.status_post(
+                # Set the content of the status to the string returned above
                 content,
+                # Reply to the mention
                 in_reply_to_id=notification["status"]["id"],
+                # Match the visibility of the mention
+                visibility = notification['status']['visibility']
             )
-            # TODO: If the incoming message is a DM, send a DM back, not a public reply
             posts_to_delete.append(post["id"])
 
         elif notification["type"] == "favourite":
@@ -165,13 +173,15 @@ def set_primary_logger(log_level):
     # logger = logger.opt(ansi=True)# noqa F841
 
 def set_weather_key(key: str):
+    global weather_api_key
+
     """If an API key works, set the class API key."""
     # Test API key to make sure it works
     params = {"key": key, "aqi": "no", "q": "London"}
     url = "https://api.weatherapi.com/v1/current.json"
     response = httpx.get(url=url, params=params)
     if response.status_code == 200:
-        WEATHER_API_KEY = key
+        weather_api_key = key
     elif response.status_code == 403:
         raise ValueError("Invalid API key")
     else:

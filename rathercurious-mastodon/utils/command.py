@@ -5,7 +5,8 @@ from . import utils
 
 class Command:
     '''
-    Functions and stuff related to adding and commands to Mastodon.py so that a reply will be made to "@<bot> #<command> <arguments>".
+    Functions and stuff related to adding and commands to Mastodon.py
+    Intended to parse commands such as "@<bot> #<command> <arguments>".
     '''
     def __init__(self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs): # noqa E501
         self.hashtag = hashtag
@@ -110,22 +111,26 @@ class Command:
             raise TypeError('Argument must be a Command')
     
     @staticmethod
-    def parse_status(status, commands: list = commands):
+    def parse_status(status: dict, always_mention: bool, commands: list = commands):
         '''
         Parse the status dict and call the appropriate command
         It passes the status dict, as well as any args and kwargs.
         Please note that the status dict is passed as the first argument.
+        
+        If the account sends a DM with the command, the bot will send a DM back.
+        But if there isn't a mention, the account won't be able to see it
+        Setting always_mention will prepend the content with "@author" and a newline
+
         If no command matches, return None. 
         '''
-        # TODO: Also pass args
 
-    
+        print(always_mention) # FOR DEBUGGING
         if commands == []:
             return None 
         
         # Get the hashtag
         if matches := re.search(r'#(\w+)', utils.parse_html(status['content'])):
-            hashtag = matches.group(1)
+                 hashtag = matches.group(1)
         else:
             return None
         
@@ -141,6 +146,9 @@ class Command:
             for command in commands:
                 if hashtag == command.hashtag:
                     # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments # noqa E501
-                    return command.function(status, *command.function_args, **command.function_kwargs)
+                    content = command.function(status, *command.function_args, **command.function_kwargs)
+                    if always_mention:
+                        # The Mastodon client Elk will seemingly not show the mention if it's on the first like  # noqa: E501
+                        return f"@{status['account']['acct']}\n{content}"
             # Return None if no command matches
             return None
