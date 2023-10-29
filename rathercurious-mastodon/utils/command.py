@@ -124,7 +124,6 @@ class Command:
         If no command matches, return None. 
         '''
 
-        print(always_mention) # FOR DEBUGGING
         if commands == []:
             return None 
         
@@ -141,7 +140,11 @@ class Command:
                 content += f'\n#{command.hashtag}\n'
                 for argument, help_text in command.help_arguments.items():
                     content += f'#{command.hashtag} {argument}: {help_text}\n'
-            return content
+            if always_mention:
+                # The Mastodon client Elk will seemingly not show the mention if it's on the first like  # noqa: E501
+                return f"@{status['account']['acct']}\n{content}"
+            else:
+                return content
         else:
             for command in commands:
                 if hashtag == command.hashtag:
@@ -150,5 +153,7 @@ class Command:
                     if always_mention:
                         # The Mastodon client Elk will seemingly not show the mention if it's on the first like  # noqa: E501
                         return f"@{status['account']['acct']}\n{content}"
+                    else:
+                        return content
             # Return None if no command matches
             return None

@@ -34,6 +34,7 @@ def main():
 
     set_primary_logger("DEBUG")
 
+    logger.info("RC_ALWAYS_MENTION: " + str(ALWAYS_MENTION))
     logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(DELETE_WHEN_DONE))
 
     # Setup config

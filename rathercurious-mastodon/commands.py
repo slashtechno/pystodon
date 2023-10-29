@@ -1,7 +1,6 @@
 import re
 import pytz 
 import datetime
-import airportsdata
 from .utils import utils
 import httpx
 
@@ -35,7 +34,6 @@ def weather(status: dict, weather_api_key: str):
     if matches := re.search(regex, utils.parse_html(status['content'])):
         latitude = matches.group(1)
         longitude = matches.group(2)
-        print(latitude, longitude) # For debugging - will try to remove before commit
     else: 
         return "Seems like you didn't specify a latitude and longitude. Please do so in the format <latitude>, <longitude>" # noqa E501
     if not (-90 <= float(latitude) <= 90):

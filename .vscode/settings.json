@@ -6,5 +6,6 @@
     "python.analysis.exclude": [
         "."
     ],
-    "python.linting.enabled": false // https://github.com/microsoft/vscode-python/wiki/Migration-to-Python-Tools-Extensions
+    "python.linting.enabled": false,
+    "files.eol": "\n" // https://github.com/microsoft/vscode-python/wiki/Migration-to-Python-Tools-Extensions
 }

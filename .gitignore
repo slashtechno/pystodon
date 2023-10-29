@@ -2,3 +2,5 @@
 __pycache__
 example-output.txt
 result*
+tmp.txt
+*venv
