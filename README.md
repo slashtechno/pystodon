@@ -38,4 +38,4 @@ A hybrid between a framework for building Mastodon bots and a standalone bot
     - `poetry install`  
 #### Running  
 1. Confirm the bot has been configured correctly  
-2. `poetry run python -m rathercurious-mastodon`  
+2. `poetry run python -m rathercurious_mastodon`  
