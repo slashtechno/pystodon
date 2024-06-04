@@ -1,12 +1,10 @@
 from loguru import logger
-from mastodon import Mastodon, StreamListener
+from mastodon import Mastodon
 from dotenv import load_dotenv
-import trio
 import httpx
 from pathlib import Path
 import os
 from sys import stderr
-import datetime
 from . import commands
 
 from rathercurious_mastodon.utils.command import Command, CheckThis
@@ -51,7 +49,7 @@ def main():
     # Setup checks
     CheckThis.add_check(
         CheckThis(
-            function=lambda: logger.info("Check 1"),
+            function=lambda: logger.info("Test check"),
             # description="Check 1",
             interval=5,
         )
@@ -62,6 +60,13 @@ def main():
     Command.add_command(Command(hashtag="test", function=lambda status: "test", help_arguments={}))
 
     # Weather command
+    Command.add_command(
+        Command(
+            hashtag="remindme",
+            function=commands.remind_me.remind_me_in,
+            help_arguments= commands.remind_me.help_arguments,
+        )
+    )
     Command.add_command(
         Command(
             hashtag="weather",

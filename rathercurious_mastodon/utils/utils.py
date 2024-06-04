@@ -60,6 +60,8 @@ class stream_listener:
                     always_mention=self.always_mention,
                     commands=self.commands,
                 )  # noqa E501
+                if content is None:
+                    return
                 post = self.mastodon.status_post(
                     # Set the content of the status to the string returned above
                     content,
@@ -106,6 +108,7 @@ class stream_listener:
                     self.mastodon.status_delete(post)
 
 def return_raw_argument(status: dict):
+    # TODO: Allow for a character sequence other than "#" to be used
     """
     Return the raw arguments (everything after the hashtag) as a string.
     Uses utils.parse_html() to parse the HTML, adding newlines after every <p> tag

@@ -1,8 +1,35 @@
 import re
 import pytz
 import datetime
-from .utils import utils
+from rathercurious_mastodon.utils import utils
 import httpx
+import dateparser
+
+class remind_me:
+    """Functions related to reminding the user of posts"""
+    help_arguments = {
+        "remind_me_in": "Remind you of a post in a specified time. For example, writing \"in 5 minutes\" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify \"in\" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/",
+    }
+    @staticmethod
+    def remind_me_in(status: dict):
+        """
+        Add the current status and the time to a database.
+        """
+        dt = dateparser.parse(utils.return_raw_argument(status))
+        if dt is None:
+            return "Invalid time. For more information, see https://dateparser.readthedocs.io/en/latest/"
+        # Make it so the datetime only goes to the minute (no seconds or lower denominations)
+        dt = dt.replace(second=0, microsecond=0)
+        # Add the reminder to the database
+        print(dt)
+        
+    @staticmethod
+    def check_reminders():
+        """
+        Check the database for reminders that are due.
+        """
+        assert False
+    
 
 
 def timezone(status: dict):
@@ -12,6 +39,7 @@ def timezone(status: dict):
     # Get the timezone
     # Since regex is being used anyway, no point in using utils.return_raw_argument()
     # "^$" isn't being used, so it's fine
+    # This is looking for a string in the format "<one or more words>/<one or more words>"
     if matches := re.search(r"(\w+\/\w+)", utils.parse_html(status["content"])):  #
         timezone = matches.group(1)
     else:
@@ -32,6 +60,7 @@ def weather(status: dict, weather_api_key: str):
 
     # Get the latitude and longitude
     # Regex for getting a float "((?:[+-]?)(?:[0-9]*)(?:[.][0-9]*)?)"
+    # Again, since regex is being used anyway, no point in using utils.return_raw_argument()
     regex = r"((?:[+-]?)(?:[0-9]*)(?:[.][0-9]*)?)(?:\s*,\s*)((?:[+-]?)(?:[0-9]*)(?:[.][0-9]*)?)"  # noqa E501
     if matches := re.search(regex, utils.parse_html(status["content"])):
         latitude = matches.group(1)
