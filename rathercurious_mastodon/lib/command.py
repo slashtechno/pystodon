@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from datetime import datetime
-from . import utils
+from rathercurious_mastodon.lib import utils
 
 
 class CheckThis:
@@ -31,7 +31,10 @@ class CheckThis:
         Run all the checks.
         """
         for check in cls.checks:
-            if check.last_ran is None or (datetime.now() - check.last_ran).seconds >= check.interval:
+            if (
+                check.last_ran is None
+                or (datetime.now() - check.last_ran).seconds >= check.interval
+            ):
                 check.function(*check.function_args, **check.function_kwargs)
                 check.last_ran = datetime.now()
 
@@ -86,6 +89,11 @@ class CheckThis:
         """Set the function arguments"""
         self._function_args = function_args
 
+    @property
+    def commands(self):
+        """Get the commands (read-only)"""
+        return self._commands
+
 
 class Command:
     """
@@ -93,26 +101,26 @@ class Command:
     Intended to parse commands such as "@<bot> #<command> <arguments>".
     """
 
-    def __init__(self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs):
-        self.hashtag = hashtag
+    def __init__(self, command, function: callable, help_text: str, *args, **kwargs):
+        self.command = command
         self.function = function
         self.function_args = args
         self.function_kwargs = kwargs
-        self.help_arguments = help_arguments
+        self.help_text = help_text
 
     # Setters/Getters
     @property
-    def hashtag(self):
-        """Get the hashtag"""
-        return self._hashtag
+    def command(self):
+        """Get the command"""
+        return self._command
 
-    @hashtag.setter
-    def hashtag(self, hashtag):
-        """Set the hashtag if it is just word characters. Does not include the #"""
-        if re.search(r"^\w+$", hashtag):
-            self._hashtag = hashtag
+    @command.setter
+    def command(self, command):
+        """Set the command if it is a single sequence of non-whitespace characters, such as \"/command\". Otherwise, raise a ValueError."""
+        if re.search(r"^(?:\S)+$", command):
+            self._command = command
         else:
-            raise ValueError("Hashtag must match regex: ^\\w+$")
+            raise ValueError("Command must match regex: ^(?:\\S)+$")
 
     @property
     def function(self):
@@ -152,30 +160,23 @@ class Command:
         self._function_kwargs = function_kwargs
 
     @property
-    def help_arguments(self):
+    def help_text(self):
         """Get the arguments"""
-        return self._help_arguments
+        return self._help_text
 
-    @help_arguments.setter
-    def help_arguments(self, help_arguments):
+    @help_text.setter
+    def help_text(self, help_text: str):
         """
-        Set arguments and their help text.
-        This is used for the help command
-
-        Please note, these arguments are not passed to the function, for that, use *args and **kwargs
+        Set the help text
         """
-        if isinstance(help_arguments, dict):
-            self._help_arguments = help_arguments
-        else:
-            raise TypeError("Arguments must be a dictionary")
+        self._help_text = help_text
 
     # Methods and stuff
     def __str__(self):
-        return self.hashtag
+        return self.command
 
     # class variables
-    # TODO: Prepend _
-    commands = []
+    _commands = []
 
     # classmethods
 
@@ -184,8 +185,8 @@ class Command:
         """
         Add a command to the list of commands.
         """
-        if isinstance(command, Command) and command not in cls.commands:
-            cls.commands.append(command)
+        if isinstance(command, Command) and command not in cls._commands:
+            cls._commands.append(command)
         else:
             raise TypeError("Argument must be a Command")
 
@@ -195,12 +196,12 @@ class Command:
         Delete a command from the list of commands.
         """
         if isinstance(command, Command):
-            cls.commands.remove(command)
+            cls._commands.remove(command)
         else:
             raise TypeError("Argument must be a Command")
 
     @staticmethod
-    def parse_status(status: dict, always_mention: bool, commands: list = commands):
+    def parse_status(status: dict, always_mention: bool, commands: list = None):
         """
         Parse the status dict and call the appropriate command
         It passes the status dict, as well as any args and kwargs.
@@ -217,31 +218,31 @@ class Command:
         """
 
         if commands is None:
-            commands = Command.commands
+            commands = Command._commands
 
-        # Get the hashtag
-        if matches := re.search(r"#(\w+)", utils.parse_html(status["content"])):
-            hashtag = matches.group(1)
+        # Get the command (the first word in the content)
+        if matches := re.search(
+            r"(?:(?:@\S+@?\S+)\s+)?(\S+)(?:\s?.*)", utils.parse_html(status["content"])
+        ):
+            command = matches.group(1)
         else:
             return None
 
         #    Run the command
-        if hashtag == "help":
-            content = "Commands:\n"
-            for command in commands:
-                content += f"\n#{command.hashtag}\n"
-                for argument, help_text in command.help_arguments.items():
-                    content += f"#{command.hashtag} {argument}: {help_text}\n"
+        if command == "help":
+            content = Command.help_command(status, commands)
             if always_mention:
                 # The Mastodon client Elk will seemingly not show the mention if it's on the first like
                 return f"@{status['account']['acct']}\n{content}"
             else:
                 return content
         else:
-            for command in commands:
-                if hashtag == command.hashtag:
+            for c in commands:
+                if command == c.command:
                     # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments
-                    content = command.function(status, *command.function_args, **command.function_kwargs)
+                    content = c.function(
+                        status, *command.function_args, **command.function_kwargs
+                    )
                     if always_mention:
                         # The Mastodon client Elk will seemingly not show the mention if it's on the first like
                         return f"@{status['account']['acct']}\n{content}"
@@ -249,3 +250,24 @@ class Command:
                         return content
             # Return None if no command matches
             return None
+
+    @staticmethod
+    def help_command(status: dict, commands: list = None) -> str:
+        """
+        If an argument is provided, return the help text for that command.
+        Otherwise, return a list of commands.
+        """
+        if commands is None:
+            commands = Command.commands
+        if not utils.return_raw_argument(status=status):
+            content = "Commands:\n"
+            for c in commands:
+                content += f"\n{c.command}\n"
+            content += '\n\nUse "help <command>" to get help for a specific command'
+            return content
+        else:
+            for c in commands:
+                if utils.return_raw_argument(status=status) == c.command:
+                    content = f"Help text for {c.command}:\n{c.help_text}"
+                    return content
+            return "Command not found"

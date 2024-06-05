@@ -1,7 +1,9 @@
 import re
 import pytz
 import datetime
-from rathercurious_mastodon.utils import utils
+from rathercurious_mastodon.lib import utils
+from rathercurious_mastodon.utils.logging import logger
+from rathercurious_mastodon.utils.cli_args import args
 import httpx
 import dateparser
 from mastodon import Mastodon
@@ -31,9 +33,7 @@ class RelativeReminder(peewee.Model):
 class RemindMe:
     """Functions related to reminding the user of posts"""
 
-    help_arguments = {
-        "remind_me_in": 'Remind you of a post in a specified time. For example, writing "in 5 minutes" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify "in" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/',
-    }
+    help_text = 'Remind you of a post in a specified time. For example, posting/replying with "@bot@example.com #remindme in 5 minutes" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify "in" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/'
 
     @staticmethod
     def remind_me_in(status: dict):
@@ -64,7 +64,9 @@ class RemindMe:
         peewee_proxy.connect()
         try:
             # Select all columns where the datetime is now
-            for reminder in RelativeReminder.select().where(RelativeReminder.datetime == now):
+            for reminder in RelativeReminder.select().where(
+                RelativeReminder.datetime == now
+            ):
                 status = json.loads(reminder.status)
                 # Return the status
                 yield status
@@ -83,7 +85,10 @@ class RemindMe:
         """
         Remind the user of a post.
         """
-        mastodon = Mastodon(access_token=cls.mastodon_access_token, api_base_url=cls.mastodon_api_base_url)
+        mastodon = Mastodon(
+            access_token=cls.mastodon_access_token,
+            api_base_url=cls.mastodon_api_base_url,
+        )
         content = f"@{status['account']['acct']}\nHere's your reminder!"
         mastodon.status_post(
             status=content,
@@ -182,4 +187,7 @@ def weather(status: dict, weather_api_key: str):
         f"The temperature is {weather_c}°C ({weather_f}°F)",
         f"The temperature feels like {feelslike_c}°C ({feelslike_f}°F)",
     ]
+    logger.warning(
+        "Always mentioning is disabled and the user will not be mentioned, even though this is a DM"
+    ) if (args.always_mention is False) and (status["visibility"] == "direct") else None
     return "\n".join(lines)

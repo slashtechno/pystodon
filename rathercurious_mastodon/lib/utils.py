@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import re
 from mastodon import Mastodon, StreamListener
-from rathercurious_mastodon.utils.command import Command, CheckThis
+from rathercurious_mastodon.lib.command import Command, CheckThis
 import trio
 
 
@@ -27,7 +27,9 @@ class stream_listener:
         self.always_mention = always_mention
         self.commands = commands
 
-        self.mastodon = Mastodon(access_token=mastodon_access_token, api_base_url=mastodon_api_base_url)
+        self.mastodon = Mastodon(
+            access_token=mastodon_access_token, api_base_url=mastodon_api_base_url
+        )
 
     class partially_configured_stream_listener(StreamListener):
         """
@@ -62,6 +64,14 @@ class stream_listener:
                 )  # noqa E501
                 if content is None:
                     return
+                if (
+                    len(content)
+                    > self.mastodon.instance().configuration.statuses.max_characters
+                ):
+                    print(
+                        f"ERROR: The content returned by the command was too long ({self.mastodon.instance().configuration.statuses.max_characters} characters). Please try again."
+                    )
+                    return
                 post = self.mastodon.status_post(
                     # Set the content of the status to the string returned above
                     content,
@@ -81,11 +91,13 @@ class stream_listener:
         """
         Stream statuses.
         """
-        self.fully_configured_stream_listener = self.partially_configured_stream_listener(
-            mastodon=self.mastodon,
-            delete_when_done=self.delete_when_done,
-            always_mention=self.always_mention,
-            commands=self.commands,
+        self.fully_configured_stream_listener = (
+            self.partially_configured_stream_listener(
+                mastodon=self.mastodon,
+                delete_when_done=self.delete_when_done,
+                always_mention=self.always_mention,
+                commands=self.commands,
+            )
         )
         self.mastodon.stream_user(self.fully_configured_stream_listener, run_async=True)
         trio.run(self.sleep_or_not)
@@ -109,22 +121,21 @@ class stream_listener:
 
 
 def return_raw_argument(status: dict):
-    # TODO: Allow for a character sequence other than "#" to be used
     """
-    Return the raw arguments (everything after the hashtag) as a string.
+    Return the raw arguments (everything after the command) as a string.
     Uses utils.parse_html() to parse the HTML, adding newlines after every <p> tag
     In many cases, if regex is being used anyway, it's better to use that instead
     """
     content = parse_html(html_content=status["content"])
-    # Match from the beginning of the string, a hashtag, a space, and then ANYTHING, including newlines # noqa E501
+    # Match f
     # re.DOTALL is present so commands can span multiple lines
     if matches := re.search(
-        r"^(?:@\w+\s+)(?:#\w+\s+)(.+)$",
-        # From what I can tell, there will always be a mention if it's a reply. Some clients just don't show it in the body content
+        r"^(?:(?:@\S+@?\S+)\s+)?(?:\S+)(?:\s?(.*))$",
+        # From what I can tell, there w1ill always be a mention, even if it's a reply. Some clients just don't show it in the body content. Either way, making it optional shouldn't have any negative effects.
         content,
         flags=re.IGNORECASE | re.DOTALL,
     ):
-        return matches.group(1)
+        return matches.group(1).rstrip()
     else:
         # Unsure if it should return None or an empty string
         return None
