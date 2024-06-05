@@ -3,11 +3,11 @@ services:
   postgres:
     container_name: postgres
     image: postgres:latest
-    ports:
-      - 5433:5432
+    # ports:
+    #   - 5432:5432
     # Disabling persistence to allow for the program to be run multiple times
-    # volumes:
-      # - ./db-data:/var/lib/postgresql/data
+    volumes:
+      - data:/var/lib/postgresql/data
     # environment:
     #   POSTGRES_DB: "db"
     #   POSTGRES_PASSWORD: "dbpass"
@@ -15,15 +15,17 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: pg_isready -U db -h 127.0.0.1
+      # https://stackoverflow.com/a/73049146
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
       interval: 5s
     networks:
       - db-net
-  pgweb:
-    container_name: pgweb
-    image: sosedoff/pgweb
-    ports:
-      - 8081:8081
+  rathercurious-mastodon:
+    container_name: rathercurious-mastodon
+    # Build ./Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
     env_file:
       - .env
     networks:
@@ -31,13 +33,26 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "127.0.0.1", "8081"]
-      interval: 5s
+  # pgweb is a web-based database browser for PostgreSQL if you want to check the database via a web interface
+  # pgweb:
+  #   container_name: pgweb
+  #   image: sosedoff/pgweb
+  #   ports:
+  #     - 8081:8081
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - db-net
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "nc", "-vz", "127.0.0.1", "8081"]
+  #     interval: 5s
 
-# volumes:
-#   data:
-#     name: hello-postgres
+volumes:
+  data:
+    name: rathercurious-mastodon
 
 networks:
   db-net:

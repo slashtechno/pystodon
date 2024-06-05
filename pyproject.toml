@@ -20,6 +20,8 @@ dateparser = "^1.2.0"
 peewee = "^3.17.5"
 psycopg2-binary = "^2.9.9"
 
+[tool.poetry.scripts]
+rathercurious-mastodon = "rathercurious_mastodon.__main__:main"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
