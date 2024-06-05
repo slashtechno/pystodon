@@ -1,7 +1,9 @@
 import re
 import pytz
 import datetime
-from rathercurious_mastodon.utils import utils
+from rathercurious_mastodon.lib import utils
+from rathercurious_mastodon.utils.logging import logger
+from rathercurious_mastodon.utils.cli_args import args
 import httpx
 import dateparser
 from mastodon import Mastodon
@@ -182,4 +184,5 @@ def weather(status: dict, weather_api_key: str):
         f"The temperature is {weather_c}°C ({weather_f}°F)",
         f"The temperature feels like {feelslike_c}°C ({feelslike_f}°F)",
     ]
+    logger.warning("Always mentioning is disabled and the user will not be mentioned, even though this is a DM") if (args.always_mention is False) and (status["visibility"] == "direct") else None 
     return "\n".join(lines)

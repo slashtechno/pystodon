@@ -1,83 +1,61 @@
-from loguru import logger
-from mastodon import Mastodon
-from dotenv import load_dotenv
 import httpx
-from pathlib import Path
-import os
-from sys import stderr
 from . import commands
 from peewee import PostgresqlDatabase
 
 
-from rathercurious_mastodon.utils.command import Command, CheckThis
-from rathercurious_mastodon.utils import utils
+from rathercurious_mastodon.lib.command import Command, CheckThis
+from rathercurious_mastodon.lib import utils
+from rathercurious_mastodon.utils.logging import logger
+from rathercurious_mastodon.utils.cli_args import args
 
 # Global variables
-mastodon = Mastodon
 posts_to_delete = []
-DELETE_WHEN_DONE = None
-weather_api_key = None
-ALWAYS_MENTION = None
 
 
 def main():
-    global mastodon
-    global DELETE_WHEN_DONE
-    global ALWAYS_MENTION
+    commands.RemindMe.mastodon_access_token = args.mastodon_access_token
+    commands.RemindMe.mastodon_api_base_url = args.mastodon_api_base_url
 
-    load_dotenv(dotenv_path=Path(".") / ".env")
-    mastodon_access_token = os.getenv("RC_MASTODON_ACCESS_TOKEN")
-    mastodon_api_base_url = os.getenv("RC_MASTODON_API_BASE_URL")
-    weather_api_key = os.getenv("RC_WEATHER_API_KEY")
-
-    DELETE_WHEN_DONE = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
-    ALWAYS_MENTION = os.getenv("RC_ALWAYS_MENTION", "False").lower() == "true"
-    set_primary_logger("DEBUG")
-    logger.info("RC_ALWAYS_MENTION: " + str(ALWAYS_MENTION))
-    logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(DELETE_WHEN_DONE))
-
-    pg_db = PostgresqlDatabase(
-        os.getenv("POSTGRES_DB"),
-        user=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host=os.getenv("POSTGRES_DB_HOST"),
-        port=os.getenv("POSTGRES_DB_PORT"),
-    )
-    commands.peewee_proxy.initialize(pg_db)
-    commands.RemindMe.mastodon_access_token = mastodon_access_token
-    commands.RemindMe.mastodon_api_base_url = mastodon_api_base_url
-
-    # Setup config
-    try:
-        set_weather_key(weather_api_key)
-    except ValueError as e:
-        if str(e) == "Invalid API key":
-            logger.error("Invalid API key")
-            exit(1)
+    # If the weather API key is set, check if it's valid
+    # If it's valid, add the weather command
+    if args.weather_api_key:
+        if check_if_weather_api_key_is_valid(args.weather_api_key):
+            logger.info("Weather API key is valid; adding weather command")
+            Command.add_command(
+                Command(
+                    hashtag="weather",
+                    function=commands.weather,
+                    help_arguments={
+                        "Latitude, Longitude": "The latitude and longitude to get the weather for. For example, 51.5074, 0.1278"  # noqa E501
+                    },
+                    # Pass this kwarg
+                    weather_api_key=args.weather_api_key,
+                )
+            )
         else:
-            raise e
+            logger.error("Weather API key is invalid; not adding weather command")
+    # Check if the database args are set and add the command(s) that require the database
+    # postgres_db, postgres_user, postgres_password, postgres_host, and postgres_port are set
+    if args.postgres_db and args.postgres_user and args.postgres_password and args.postgres_host and args.postgres_port:
+        logger.info("Database args are set; adding commands that require the database")
+        pg_db = PostgresqlDatabase(
+            args.postgres_db,
+            user=args.postgres_user,
+            password=args.postgres_password,
+            host=args.postgres_host,
+            port=args.postgres_port,
+        )
+        commands.peewee_proxy.initialize(pg_db)
+        Command.add_command(
+            Command(hashtag="remindme", function=commands.RemindMe.remind_me_in, help_arguments=commands.RemindMe.help_arguments)
+        )
 
     # Setup checks
     CheckThis.add_check(CheckThis(function=commands.remind, interval=5))
 
     # Setup commands
     # Test command that returns "test"
-    Command.add_command(Command(hashtag="test", function=lambda status: "test", help_arguments={}))
-    Command.add_command(
-        Command(hashtag="remindme", function=commands.RemindMe.remind_me_in, help_arguments=commands.RemindMe.help_arguments)
-    )
-    # Weather command
-    Command.add_command(
-        Command(
-            hashtag="weather",
-            function=commands.weather,
-            help_arguments={
-                "Latitude, Longitude": "The latitude and longitude to get the weather for. For example, 51.5074, 0.1278"  # noqa E501
-            },
-            # Pass this kwarg
-            weather_api_key=weather_api_key,
-        )
-    )
+    # Command.add_command(Command(hashtag="test", function=lambda status: "test", help_arguments={}))
 
     # Timezone command
     Command.add_command(
@@ -91,25 +69,16 @@ def main():
     )
 
     stream_listener = utils.stream_listener(
-        mastodon_access_token=mastodon_access_token,
-        mastodon_api_base_url=mastodon_api_base_url,
-        delete_when_done=DELETE_WHEN_DONE,
-        always_mention=ALWAYS_MENTION,
+        mastodon_access_token=args.mastodon_access_token,
+        mastodon_api_base_url=args.mastodon_api_base_url,
+        delete_when_done=args.delete_posts_after_run,
+        always_mention=args.always_mention
     )
     stream_listener.stream()
 
 
-def set_primary_logger(log_level):
-    global logger
-    logger.remove()
-    # ^10 is a formatting directive to center witzh a padding of 10
-    logger_format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> |<level>{level: ^10}</level>| <level>{message}</level>"  # noqa E501
-    logger.add(stderr, format=logger_format, colorize=True, level=log_level)
-    # logger = logger.opt(ansi=True)# noqa F841
 
-
-def set_weather_key(key: str):
-    global weather_api_key
+def check_if_weather_api_key_is_valid(key: str):
 
     """If an API key works, set the class API key."""
     # Test API key to make sure it works
@@ -117,9 +86,9 @@ def set_weather_key(key: str):
     url = "https://api.weatherapi.com/v1/current.json"
     response = httpx.get(url=url, params=params)
     if response.status_code == 200:
-        weather_api_key = key
+        return True
     elif response.status_code == 403:
-        raise ValueError("Invalid API key")
+        return False
     else:
         response.raise_for_status()
 

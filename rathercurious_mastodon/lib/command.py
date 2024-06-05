@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from datetime import datetime
-from . import utils
+from rathercurious_mastodon.lib import utils
 
 
 class CheckThis:
