@@ -1,10 +1,11 @@
 # Modified version of https://github.com/sosedoff/pgweb/blob/master/docker-compose.yml
 services:
+  # docker compose up postgres -d
   postgres:
     container_name: postgres
     image: postgres:latest
-    # ports:
-    #   - 5432:5432
+    ports:
+      - 5433:5432
     # Disabling persistence to allow for the program to be run multiple times
     volumes:
       - data:/var/lib/postgresql/data

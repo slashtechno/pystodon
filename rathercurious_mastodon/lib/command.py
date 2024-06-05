@@ -179,8 +179,7 @@ class Command:
         return self.hashtag
 
     # class variables
-    # TODO: Prepend _
-    commands = []
+    _commands = []
 
     # classmethods
 
@@ -189,8 +188,8 @@ class Command:
         """
         Add a command to the list of commands.
         """
-        if isinstance(command, Command) and command not in cls.commands:
-            cls.commands.append(command)
+        if isinstance(command, Command) and command not in cls._commands:
+            cls._commands.append(command)
         else:
             raise TypeError("Argument must be a Command")
 
@@ -200,12 +199,12 @@ class Command:
         Delete a command from the list of commands.
         """
         if isinstance(command, Command):
-            cls.commands.remove(command)
+            cls._commands.remove(command)
         else:
             raise TypeError("Argument must be a Command")
 
     @staticmethod
-    def parse_status(status: dict, always_mention: bool, commands: list = commands):
+    def parse_status(status: dict, always_mention: bool, commands: list = None):
         """
         Parse the status dict and call the appropriate command
         It passes the status dict, as well as any args and kwargs.
@@ -222,7 +221,7 @@ class Command:
         """
 
         if commands is None:
-            commands = Command.commands
+            commands = Command._commands
 
         # Get the hashtag
         if matches := re.search(r"#(\w+)", utils.parse_html(status["content"])):
