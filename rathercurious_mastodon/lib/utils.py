@@ -64,19 +64,18 @@ class stream_listener:
                 )  # noqa E501
                 if content is None:
                     return
-                if len(content) < 500:
-                    post = self.mastodon.status_post(
-                        # Set the content of the status to the string returned above
-                        content,
-                        # Reply to the mention
-                        in_reply_to_id=notification["status"]["id"],
-                        # Match the visibility of the mention
-                        visibility=notification["status"]["visibility"],
-                    )
-                    self.posts_to_delete.append(post["id"])
-                else:
-                    # TODO: Give more detail on this
-                    print("Content too long. Skipping.")
+                if len(content) > self.mastodon.instance().configuration.statuses.max_characters:
+                    print(f"ERROR: The content returned by the command was too long ({self.mastodon.instance().configuration.statuses.max_characters} characters). Please try again.")
+                    return
+                post = self.mastodon.status_post(
+                    # Set the content of the status to the string returned above
+                    content,
+                    # Reply to the mention
+                    in_reply_to_id=notification["status"]["id"],
+                    # Match the visibility of the mention
+                    visibility=notification["status"]["visibility"],
+                )
+                self.posts_to_delete.append(post["id"])
 
 
             elif notification["type"] == "favourite":
@@ -133,7 +132,7 @@ def return_raw_argument(status: dict):
         content,
         flags=re.IGNORECASE | re.DOTALL,
     ):
-        return matches.group(1)
+        return matches.group(1).rstrip()
     else:
         # Unsure if it should return None or an empty string
         return None
