@@ -4,36 +4,42 @@ import datetime
 from rathercurious_mastodon.utils import utils
 import httpx
 import dateparser
+from mastodon import Mastodon
+
 # https://docs.peewee-orm.com/en/latest/peewee/quickstart.html
 # https://docs.peewee-orm.com/en/latest/peewee/models.html#field-types-table
 import peewee
 import json
+
 # https://stackoverflow.com/a/45043715
 # https://timlehr.com/2018/01/lazy-database-initialization-with-peewee-proxy-subclasses/
 peewee_proxy = peewee.Proxy()
+
 
 class RelativeReminder(peewee.Model):
     """
     A class to represent a reminder that stores a status dict and a datetime
     """
+
     status = peewee.TextField()
     datetime = peewee.DateTimeField()
+
     class Meta:
         database = peewee_proxy
 
+
 class RemindMe:
     """Functions related to reminding the user of posts"""
-    help_arguments = {
-        "remind_me_in": "Remind you of a post in a specified time. For example, writing \"in 5 minutes\" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify \"in\" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/",
-    }
 
+    help_arguments = {
+        "remind_me_in": 'Remind you of a post in a specified time. For example, writing "in 5 minutes" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify "in" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/',
+    }
 
     @staticmethod
     def remind_me_in(status: dict):
         """
         Add the current status and the time to a database.
         """
-        global db
         dt = dateparser.parse(utils.return_raw_argument(status))
         if dt is None:
             return "Invalid time. For more information, see https://dateparser.readthedocs.io/en/latest/"
@@ -41,18 +47,76 @@ class RemindMe:
         dt = dt.replace(second=0, microsecond=0)
         # Add the reminder to the database
         # If the table doesn't exist, create it)
+        peewee_proxy.connect()
         if not RelativeReminder.table_exists():
             peewee_proxy.create_tables([RelativeReminder])
         RelativeReminder(status=json.dumps(status, default=str), datetime=dt).save()
         peewee_proxy.close()
         return f"Reminder set for {dt.strftime('%Y-%m-%d %H:%M:%S')}"
+
     @staticmethod
-    def check_reminders():
+    def list_reminders():
         """
         Check the database for reminders that are due.
         """
-        assert False
+        # Check all reminders that match the current date (to the minute)
+        now = datetime.datetime.now().replace(second=0, microsecond=0)
+        peewee_proxy.connect()
+        try:
+            # Select all columns where the datetime is now
+            for reminder in RelativeReminder.select().where(RelativeReminder.datetime == now):
+                status = json.loads(reminder.status)
+                # Return the status
+                yield status
+                # Delete the reminder
+                reminder.delete_instance()
+        except peewee.ProgrammingError as e:
+            if "does not exist" in str(e):
+                peewee_proxy.close()
+                return
+            else:
+                raise e
+        peewee_proxy.close()
 
+    @classmethod
+    def remind_user(cls, status: dict):
+        """
+        Remind the user of a post.
+        """
+        mastodon = Mastodon(
+            access_token=cls.mastodon_access_token,
+            api_base_url=cls.mastodon_api_base_url 
+            )
+        content = f"@{status['account']['acct']}\nHere's your reminder!"
+        mastodon.status_post(
+            status=content,
+            in_reply_to_id=status["id"],
+            visibility=status["visibility"],
+        )
+
+    # Getters and setters for mastodon_api_base_url and mastodon_access_token
+    @property
+    def mastodon_api_base_url(cls):
+        return cls._mastodon_api_base_url
+
+    @mastodon_api_base_url.setter
+    def mastodon_api_base_url(cls, value):
+        cls._mastodon_api_base_url = value
+
+    @property
+    def mastodon_access_token(cls):
+        return cls._mastodon_access_token
+
+    @mastodon_access_token.setter
+    def mastodon_access_token(cls, value):
+        cls._mastodon_access_token = value
+
+def remind():
+    """
+    Check the database for reminders that are due and remind the user.
+    """
+    for status in RemindMe.list_reminders():
+        RemindMe.remind_user(status)
 
 def timezone(status: dict):
     """

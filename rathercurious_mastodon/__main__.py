@@ -32,6 +32,10 @@ def main():
 
     DELETE_WHEN_DONE = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
     ALWAYS_MENTION = os.getenv("RC_ALWAYS_MENTION", "False").lower() == "true"
+    set_primary_logger("DEBUG")
+    logger.info("RC_ALWAYS_MENTION: " + str(ALWAYS_MENTION))
+    logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(DELETE_WHEN_DONE))
+
     pg_db = PostgresqlDatabase(
         os.getenv("POSTGRES_DB"),
         user=os.getenv("POSTGRES_USER"),
@@ -40,12 +44,8 @@ def main():
         port=os.getenv("POSTGRES_DB_PORT"),
     )
     commands.peewee_proxy.initialize(pg_db)
-    
-
-    set_primary_logger("DEBUG")
-
-    logger.info("RC_ALWAYS_MENTION: " + str(ALWAYS_MENTION))
-    logger.info("RC_DELETE_POSTS_AFTER_RUN: " + str(DELETE_WHEN_DONE))
+    commands.RemindMe.mastodon_access_token = mastodon_access_token
+    commands.RemindMe.mastodon_api_base_url = mastodon_api_base_url
 
     # Setup config
     try:
@@ -60,9 +60,8 @@ def main():
     # Setup checks
     CheckThis.add_check(
         CheckThis(
-            function=lambda: logger.info("Test check"),
-            # description="Check 1",
-            interval=5,
+            function=commands.remind,
+            interval=5
         )
     )
 
@@ -70,11 +69,7 @@ def main():
     # Test command that returns "test"
     Command.add_command(Command(hashtag="test", function=lambda status: "test", help_arguments={}))
     Command.add_command(
-        Command(
-            hashtag="remindme",
-            function=commands.RemindMe.remind_me_in,
-            help_arguments= commands.RemindMe.help_arguments
-        )
+        Command(hashtag="remindme", function=commands.RemindMe.remind_me_in, help_arguments=commands.RemindMe.help_arguments)
     )
     # Weather command
     Command.add_command(
@@ -84,7 +79,7 @@ def main():
             help_arguments={
                 "Latitude, Longitude": "The latitude and longitude to get the weather for. For example, 51.5074, 0.1278"  # noqa E501
             },
-            # Pass this kwarg 
+            # Pass this kwarg
             weather_api_key=weather_api_key,
         )
     )
@@ -107,7 +102,6 @@ def main():
         always_mention=ALWAYS_MENTION,
     )
     stream_listener.stream()
-
 
 
 def set_primary_logger(log_level):

@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from . import utils
 
+
 class CheckThis:
     """
     Every x seconds run function y.
@@ -40,6 +41,7 @@ class CheckThis:
     def interval(self):
         """Get the interval"""
         return self._interval
+
     @interval.setter
     def interval(self, interval):
         """Set the interval if it is a positive integer"""
@@ -63,8 +65,6 @@ class CheckThis:
             self._function = function
         else:
             raise TypeError("Function must be callable")
-
-
 
     @property
     def function_kwargs(self):

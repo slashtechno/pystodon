@@ -107,6 +107,7 @@ class stream_listener:
                 for post in self.fully_configured_stream_listener.posts_to_delete:
                     self.mastodon.status_delete(post)
 
+
 def return_raw_argument(status: dict):
     # TODO: Allow for a character sequence other than "#" to be used
     """
