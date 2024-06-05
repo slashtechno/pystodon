@@ -1,0 +1,44 @@
+# Modified version of https://github.com/sosedoff/pgweb/blob/master/docker-compose.yml
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    ports:
+      - 5433:5432
+    # Disabling persistence to allow for the program to be run multiple times
+    # volumes:
+      # - ./db-data:/var/lib/postgresql/data
+    # environment:
+    #   POSTGRES_DB: "db"
+    #   POSTGRES_PASSWORD: "dbpass"
+    #   POSTGRES_USER: "dbuser"
+    env_file:
+      - .env
+    healthcheck:
+      test: pg_isready -U db -h 127.0.0.1
+      interval: 5s
+    networks:
+      - db-net
+  pgweb:
+    container_name: pgweb
+    image: sosedoff/pgweb
+    ports:
+      - 8081:8081
+    env_file:
+      - .env
+    networks:
+      - db-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "127.0.0.1", "8081"]
+      interval: 5s
+
+# volumes:
+#   data:
+#     name: hello-postgres
+
+networks:
+  db-net:
+    name: db-net

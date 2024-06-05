@@ -6,6 +6,8 @@ from pathlib import Path
 import os
 from sys import stderr
 from . import commands
+from peewee import PostgresqlDatabase
+
 
 from rathercurious_mastodon.utils.command import Command, CheckThis
 from rathercurious_mastodon.utils import utils
@@ -30,6 +32,15 @@ def main():
 
     DELETE_WHEN_DONE = os.getenv("RC_DELETE_POSTS_AFTER_RUN", "False").lower() == "true"  # noqa E501
     ALWAYS_MENTION = os.getenv("RC_ALWAYS_MENTION", "False").lower() == "true"
+    pg_db = PostgresqlDatabase(
+        os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_DB_HOST"),
+        port=os.getenv("POSTGRES_DB_PORT"),
+    )
+    commands.peewee_proxy.initialize(pg_db)
+    
 
     set_primary_logger("DEBUG")
 
@@ -58,15 +69,14 @@ def main():
     # Setup commands
     # Test command that returns "test"
     Command.add_command(Command(hashtag="test", function=lambda status: "test", help_arguments={}))
-
-    # Weather command
     Command.add_command(
         Command(
             hashtag="remindme",
-            function=commands.remind_me.remind_me_in,
-            help_arguments= commands.remind_me.help_arguments,
+            function=commands.RemindMe.remind_me_in,
+            help_arguments= commands.RemindMe.help_arguments
         )
     )
+    # Weather command
     Command.add_command(
         Command(
             hashtag="weather",

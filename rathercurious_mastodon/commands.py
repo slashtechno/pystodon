@@ -4,32 +4,54 @@ import datetime
 from rathercurious_mastodon.utils import utils
 import httpx
 import dateparser
+# https://docs.peewee-orm.com/en/latest/peewee/quickstart.html
+# https://docs.peewee-orm.com/en/latest/peewee/models.html#field-types-table
+import peewee
+import json
+# https://stackoverflow.com/a/45043715
+# https://timlehr.com/2018/01/lazy-database-initialization-with-peewee-proxy-subclasses/
+peewee_proxy = peewee.Proxy()
 
-class remind_me:
+class RelativeReminder(peewee.Model):
+    """
+    A class to represent a reminder that stores a status dict and a datetime
+    """
+    status = peewee.TextField()
+    datetime = peewee.DateTimeField()
+    class Meta:
+        database = peewee_proxy
+
+class RemindMe:
     """Functions related to reminding the user of posts"""
     help_arguments = {
         "remind_me_in": "Remind you of a post in a specified time. For example, writing \"in 5 minutes\" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify \"in\" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/",
     }
+
+
     @staticmethod
     def remind_me_in(status: dict):
         """
         Add the current status and the time to a database.
         """
+        global db
         dt = dateparser.parse(utils.return_raw_argument(status))
         if dt is None:
             return "Invalid time. For more information, see https://dateparser.readthedocs.io/en/latest/"
         # Make it so the datetime only goes to the minute (no seconds or lower denominations)
         dt = dt.replace(second=0, microsecond=0)
         # Add the reminder to the database
-        print(dt)
-        
+        # If the table doesn't exist, create it)
+        if not RelativeReminder.table_exists():
+            peewee_proxy.create_tables([RelativeReminder])
+        RelativeReminder(status=json.dumps(status, default=str), datetime=dt).save()
+        peewee_proxy.close()
+        return f"Reminder set for {dt.strftime('%Y-%m-%d %H:%M:%S')}"
     @staticmethod
     def check_reminders():
         """
         Check the database for reminders that are due.
         """
         assert False
-    
 
 
 def timezone(status: dict):
