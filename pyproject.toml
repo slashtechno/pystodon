@@ -24,7 +24,6 @@ psycopg2-binary = "^2.9.9"
 rathercurious-mastodon = "rathercurious_mastodon.__main__:main"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
 ruff = "^0.4.7"
 
 [build-system]

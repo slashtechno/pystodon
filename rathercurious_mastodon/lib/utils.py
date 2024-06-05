@@ -27,7 +27,9 @@ class stream_listener:
         self.always_mention = always_mention
         self.commands = commands
 
-        self.mastodon = Mastodon(access_token=mastodon_access_token, api_base_url=mastodon_api_base_url)
+        self.mastodon = Mastodon(
+            access_token=mastodon_access_token, api_base_url=mastodon_api_base_url
+        )
 
     class partially_configured_stream_listener(StreamListener):
         """
@@ -81,11 +83,13 @@ class stream_listener:
         """
         Stream statuses.
         """
-        self.fully_configured_stream_listener = self.partially_configured_stream_listener(
-            mastodon=self.mastodon,
-            delete_when_done=self.delete_when_done,
-            always_mention=self.always_mention,
-            commands=self.commands,
+        self.fully_configured_stream_listener = (
+            self.partially_configured_stream_listener(
+                mastodon=self.mastodon,
+                delete_when_done=self.delete_when_done,
+                always_mention=self.always_mention,
+                commands=self.commands,
+            )
         )
         self.mastodon.stream_user(self.fully_configured_stream_listener, run_async=True)
         trio.run(self.sleep_or_not)

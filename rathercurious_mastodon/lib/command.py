@@ -31,7 +31,10 @@ class CheckThis:
         Run all the checks.
         """
         for check in cls.checks:
-            if check.last_ran is None or (datetime.now() - check.last_ran).seconds >= check.interval:
+            if (
+                check.last_ran is None
+                or (datetime.now() - check.last_ran).seconds >= check.interval
+            ):
                 check.function(*check.function_args, **check.function_kwargs)
                 check.last_ran = datetime.now()
 
@@ -93,7 +96,9 @@ class Command:
     Intended to parse commands such as "@<bot> #<command> <arguments>".
     """
 
-    def __init__(self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs):
+    def __init__(
+        self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs
+    ):
         self.hashtag = hashtag
         self.function = function
         self.function_args = args
@@ -241,7 +246,9 @@ class Command:
             for command in commands:
                 if hashtag == command.hashtag:
                     # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments
-                    content = command.function(status, *command.function_args, **command.function_kwargs)
+                    content = command.function(
+                        status, *command.function_args, **command.function_kwargs
+                    )
                     if always_mention:
                         # The Mastodon client Elk will seemingly not show the mention if it's on the first like
                         return f"@{status['account']['acct']}\n{content}"

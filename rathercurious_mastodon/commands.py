@@ -66,7 +66,9 @@ class RemindMe:
         peewee_proxy.connect()
         try:
             # Select all columns where the datetime is now
-            for reminder in RelativeReminder.select().where(RelativeReminder.datetime == now):
+            for reminder in RelativeReminder.select().where(
+                RelativeReminder.datetime == now
+            ):
                 status = json.loads(reminder.status)
                 # Return the status
                 yield status
@@ -85,7 +87,10 @@ class RemindMe:
         """
         Remind the user of a post.
         """
-        mastodon = Mastodon(access_token=cls.mastodon_access_token, api_base_url=cls.mastodon_api_base_url)
+        mastodon = Mastodon(
+            access_token=cls.mastodon_access_token,
+            api_base_url=cls.mastodon_api_base_url,
+        )
         content = f"@{status['account']['acct']}\nHere's your reminder!"
         mastodon.status_post(
             status=content,
@@ -184,5 +189,7 @@ def weather(status: dict, weather_api_key: str):
         f"The temperature is {weather_c}°C ({weather_f}°F)",
         f"The temperature feels like {feelslike_c}°C ({feelslike_f}°F)",
     ]
-    logger.warning("Always mentioning is disabled and the user will not be mentioned, even though this is a DM") if (args.always_mention is False) and (status["visibility"] == "direct") else None 
+    logger.warning(
+        "Always mentioning is disabled and the user will not be mentioned, even though this is a DM"
+    ) if (args.always_mention is False) and (status["visibility"] == "direct") else None
     return "\n".join(lines)

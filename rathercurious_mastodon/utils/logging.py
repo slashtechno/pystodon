@@ -17,4 +17,3 @@ def set_primary_logger(log_level):
 
 
 set_primary_logger(args.log_level)
-

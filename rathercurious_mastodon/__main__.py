@@ -36,7 +36,13 @@ def main():
             logger.error("Weather API key is invalid; not adding weather command")
     # Check if the database args are set and add the command(s) that require the database
     # postgres_db, postgres_user, postgres_password, postgres_host, and postgres_port are set
-    if args.postgres_db and args.postgres_user and args.postgres_password and args.postgres_host and args.postgres_port:
+    if (
+        args.postgres_db
+        and args.postgres_user
+        and args.postgres_password
+        and args.postgres_host
+        and args.postgres_port
+    ):
         logger.info("Database args are set; adding commands that require the database")
         pg_db = PostgresqlDatabase(
             args.postgres_db,
@@ -47,7 +53,11 @@ def main():
         )
         commands.peewee_proxy.initialize(pg_db)
         Command.add_command(
-            Command(hashtag="remindme", function=commands.RemindMe.remind_me_in, help_arguments=commands.RemindMe.help_arguments)
+            Command(
+                hashtag="remindme",
+                function=commands.RemindMe.remind_me_in,
+                help_arguments=commands.RemindMe.help_arguments,
+            )
         )
 
     # Setup checks
@@ -72,14 +82,12 @@ def main():
         mastodon_access_token=args.mastodon_access_token,
         mastodon_api_base_url=args.mastodon_api_base_url,
         delete_when_done=args.delete_posts_after_run,
-        always_mention=args.always_mention
+        always_mention=args.always_mention,
     )
     stream_listener.stream()
 
 
-
 def check_if_weather_api_key_is_valid(key: str):
-
     """If an API key works, set the class API key."""
     # Test API key to make sure it works
     params = {"key": key, "aqi": "no", "q": "London"}
