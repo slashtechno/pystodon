@@ -121,7 +121,6 @@ class stream_listener:
 
 
 def return_raw_argument(status: dict):
-    # TODO: Allow for a character sequence other than "#" to be used
     """
     Return the raw arguments (everything after the command) as a string.
     Uses utils.parse_html() to parse the HTML, adding newlines after every <p> tag
