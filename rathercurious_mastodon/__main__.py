@@ -58,12 +58,7 @@ def main():
             raise e
 
     # Setup checks
-    CheckThis.add_check(
-        CheckThis(
-            function=commands.remind,
-            interval=5
-        )
-    )
+    CheckThis.add_check(CheckThis(function=commands.remind, interval=5))
 
     # Setup commands
     # Test command that returns "test"

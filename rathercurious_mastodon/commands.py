@@ -83,10 +83,7 @@ class RemindMe:
         """
         Remind the user of a post.
         """
-        mastodon = Mastodon(
-            access_token=cls.mastodon_access_token,
-            api_base_url=cls.mastodon_api_base_url 
-            )
+        mastodon = Mastodon(access_token=cls.mastodon_access_token, api_base_url=cls.mastodon_api_base_url)
         content = f"@{status['account']['acct']}\nHere's your reminder!"
         mastodon.status_post(
             status=content,
@@ -111,12 +108,14 @@ class RemindMe:
     def mastodon_access_token(cls, value):
         cls._mastodon_access_token = value
 
+
 def remind():
     """
     Check the database for reminders that are due and remind the user.
     """
     for status in RemindMe.list_reminders():
         RemindMe.remind_user(status)
+
 
 def timezone(status: dict):
     """
