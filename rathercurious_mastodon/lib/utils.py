@@ -64,15 +64,20 @@ class stream_listener:
                 )  # noqa E501
                 if content is None:
                     return
-                post = self.mastodon.status_post(
-                    # Set the content of the status to the string returned above
-                    content,
-                    # Reply to the mention
-                    in_reply_to_id=notification["status"]["id"],
-                    # Match the visibility of the mention
-                    visibility=notification["status"]["visibility"],
-                )
-                self.posts_to_delete.append(post["id"])
+                if len(content) < 500:
+                    post = self.mastodon.status_post(
+                        # Set the content of the status to the string returned above
+                        content,
+                        # Reply to the mention
+                        in_reply_to_id=notification["status"]["id"],
+                        # Match the visibility of the mention
+                        visibility=notification["status"]["visibility"],
+                    )
+                    self.posts_to_delete.append(post["id"])
+                else:
+                    # TODO: Give more detail on this
+                    print("Content too long. Skipping.")
+
 
             elif notification["type"] == "favourite":
                 pass
@@ -115,16 +120,16 @@ class stream_listener:
 def return_raw_argument(status: dict):
     # TODO: Allow for a character sequence other than "#" to be used
     """
-    Return the raw arguments (everything after the hashtag) as a string.
+    Return the raw arguments (everything after the command) as a string.
     Uses utils.parse_html() to parse the HTML, adding newlines after every <p> tag
     In many cases, if regex is being used anyway, it's better to use that instead
     """
     content = parse_html(html_content=status["content"])
-    # Match from the beginning of the string, a hashtag, a space, and then ANYTHING, including newlines # noqa E501
+    # Match f
     # re.DOTALL is present so commands can span multiple lines
     if matches := re.search(
-        r"^(?:@\w+\s+)(?:#\w+\s+)(.+)$",
-        # From what I can tell, there will always be a mention if it's a reply. Some clients just don't show it in the body content
+        r"^(?:(?:@\S+@?\S+)\s+)?(?:\S+)(?:\s?(.*))$",
+        # From what I can tell, there w1ill always be a mention, even if it's a reply. Some clients just don't show it in the body content. Either way, making it optional shouldn't have any negative effects.
         content,
         flags=re.IGNORECASE | re.DOTALL,
     ):

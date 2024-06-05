@@ -97,9 +97,9 @@ class Command:
     """
 
     def __init__(
-        self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs
+        self, command, function: callable, help_arguments: dict = {}, *args, **kwargs
     ):
-        self.hashtag = hashtag
+        self.command = command
         self.function = function
         self.function_args = args
         self.function_kwargs = kwargs
@@ -107,17 +107,18 @@ class Command:
 
     # Setters/Getters
     @property
-    def hashtag(self):
-        """Get the hashtag"""
-        return self._hashtag
+    def command(self):
+        """Get the command"""
+        return self._command
 
-    @hashtag.setter
-    def hashtag(self, hashtag):
-        """Set the hashtag if it is just word characters. Does not include the #"""
-        if re.search(r"^\w+$", hashtag):
-            self._hashtag = hashtag
+    @command.setter
+    def command(self, command):
+        """Set the command if it is a single sequence of non-whitespace characters, such as \"/command\". Otherwise, raise a ValueError.
+        """
+        if re.search(r"^(?:\S)+$", command):
+            self._command = command
         else:
-            raise ValueError("Hashtag must match regex: ^\\w+$")
+            raise ValueError("Command must match regex: ^(?:\S)+$")
 
     @property
     def function(self):
@@ -176,7 +177,7 @@ class Command:
 
     # Methods and stuff
     def __str__(self):
-        return self.hashtag
+        return self.command
 
     # class variables
     _commands = []
@@ -223,29 +224,29 @@ class Command:
         if commands is None:
             commands = Command._commands
 
-        # Get the hashtag
-        if matches := re.search(r"#(\w+)", utils.parse_html(status["content"])):
-            hashtag = matches.group(1)
+        # Get the command (the first word in the content)
+        if matches := re.search(r"^(?:(?:@\S+@?\S+)\s+)?(\S+)$", utils.parse_html(status["content"])):
+            command = matches.group(1)
         else:
             return None
 
         #    Run the command
-        if hashtag == "help":
+        if command == "help":
             content = "Commands:\n"
-            for command in commands:
-                content += f"\n#{command.hashtag}\n"
-                for argument, help_text in command.help_arguments.items():
-                    content += f"#{command.hashtag} {argument}: {help_text}\n"
+            for c in commands:
+                content += f"\n#{c.command}\n"
+                for argument, help_text in c.help_arguments.items():
+                    content += f"#{c.command} {argument}: {help_text}\n"
             if always_mention:
                 # The Mastodon client Elk will seemingly not show the mention if it's on the first like
                 return f"@{status['account']['acct']}\n{content}"
             else:
                 return content
         else:
-            for command in commands:
-                if hashtag == command.hashtag:
+            for c in commands:
+                if command == c.command:
                     # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments
-                    content = command.function(
+                    content = c.function(
                         status, *command.function_args, **command.function_kwargs
                     )
                     if always_mention:
