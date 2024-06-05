@@ -88,6 +88,7 @@ class CheckThis:
     def function_args(self, function_args):
         """Set the function arguments"""
         self._function_args = function_args
+
     @property
     def commands(self):
         """Get the commands (read-only)"""
@@ -100,14 +101,12 @@ class Command:
     Intended to parse commands such as "@<bot> #<command> <arguments>".
     """
 
-    def __init__(
-        self, command, function: callable, help_arguments: dict = {}, *args, **kwargs
-    ):
+    def __init__(self, command, function: callable, help_text: str, *args, **kwargs):
         self.command = command
         self.function = function
         self.function_args = args
         self.function_kwargs = kwargs
-        self.help_arguments = help_arguments
+        self.help_text = help_text
 
     # Setters/Getters
     @property
@@ -117,8 +116,7 @@ class Command:
 
     @command.setter
     def command(self, command):
-        """Set the command if it is a single sequence of non-whitespace characters, such as \"/command\". Otherwise, raise a ValueError.
-        """
+        """Set the command if it is a single sequence of non-whitespace characters, such as \"/command\". Otherwise, raise a ValueError."""
         if re.search(r"^(?:\S)+$", command):
             self._command = command
         else:
@@ -161,24 +159,17 @@ class Command:
         """Set the function keyword arguments"""
         self._function_kwargs = function_kwargs
 
-    # TODO: Replace help_arguments with a general help_text property
     @property
-    def help_arguments(self):
+    def help_text(self):
         """Get the arguments"""
-        return self._help_arguments
+        return self._help_text
 
-    @help_arguments.setter
-    def help_arguments(self, help_arguments):
+    @help_text.setter
+    def help_text(self, help_text: str):
         """
-        Set arguments and their help text.
-        This is used for the help command
-
-        Please note, these arguments are not passed to the function, for that, use *args and **kwargs
+        Set the help text
         """
-        if isinstance(help_arguments, dict):
-            self._help_arguments = help_arguments
-        else:
-            raise TypeError("Arguments must be a dictionary")
+        self._help_text = help_text
 
     # Methods and stuff
     def __str__(self):
@@ -230,7 +221,9 @@ class Command:
             commands = Command._commands
 
         # Get the command (the first word in the content)
-        if matches := re.search(r"(?:(?:@\S+@?\S+)\s+)?(\S+)(?:\s?.*)", utils.parse_html(status["content"])):
+        if matches := re.search(
+            r"(?:(?:@\S+@?\S+)\s+)?(\S+)(?:\s?.*)", utils.parse_html(status["content"])
+        ):
             command = matches.group(1)
         else:
             return None
@@ -257,6 +250,7 @@ class Command:
                         return content
             # Return None if no command matches
             return None
+
     @staticmethod
     def help_command(status: dict, commands: list = None) -> str:
         """
@@ -269,13 +263,11 @@ class Command:
             content = "Commands:\n"
             for c in commands:
                 content += f"\n{c.command}\n"
-            content += "\n\nUse \"help <command>\" to get help for a specific command"
+            content += '\n\nUse "help <command>" to get help for a specific command'
             return content
         else:
             for c in commands:
                 if utils.return_raw_argument(status=status) == c.command:
-                    content = f"Arguments for {c.command}:\n"
-                    for argument, help_text in c.help_arguments.items():
-                        content += f"{c.command} {argument}: {help_text}\n"
+                    content = f"Help text for {c.command}:\n{c.help_text}"
                     return content
             return "Command not found"

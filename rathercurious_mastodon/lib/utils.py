@@ -64,8 +64,13 @@ class stream_listener:
                 )  # noqa E501
                 if content is None:
                     return
-                if len(content) > self.mastodon.instance().configuration.statuses.max_characters:
-                    print(f"ERROR: The content returned by the command was too long ({self.mastodon.instance().configuration.statuses.max_characters} characters). Please try again.")
+                if (
+                    len(content)
+                    > self.mastodon.instance().configuration.statuses.max_characters
+                ):
+                    print(
+                        f"ERROR: The content returned by the command was too long ({self.mastodon.instance().configuration.statuses.max_characters} characters). Please try again."
+                    )
                     return
                 post = self.mastodon.status_post(
                     # Set the content of the status to the string returned above
@@ -76,7 +81,6 @@ class stream_listener:
                     visibility=notification["status"]["visibility"],
                 )
                 self.posts_to_delete.append(post["id"])
-
 
             elif notification["type"] == "favourite":
                 pass

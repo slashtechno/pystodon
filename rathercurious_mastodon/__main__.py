@@ -25,9 +25,7 @@ def main():
                 Command(
                     command="#weather",
                     function=commands.weather,
-                    help_arguments={
-                        "Latitude, Longitude": "The latitude and longitude to get the weather for. For example, 51.5074, 0.1278"  # noqa E501
-                    },
+                    help_text="Get the weather for a location. Pass the latitude and longitude as arguments. For example, `@bot@example.com #weather 40.730610, -73.935242`",
                     # Pass this kwarg
                     weather_api_key=args.weather_api_key,
                 )
@@ -56,7 +54,7 @@ def main():
             Command(
                 command="#remindme",
                 function=commands.RemindMe.remind_me_in,
-                help_arguments=commands.RemindMe.help_arguments,
+                help_text=commands.RemindMe.help_text,
             )
         )
 
@@ -65,16 +63,18 @@ def main():
 
     # Setup commands
     # Test command that returns "test"
-    Command.add_command(Command(command="/test", function=lambda status: "test", help_arguments={}))
+    Command.add_command(
+        Command(
+            command="/test", function=lambda status: "test", help_text="Test command"
+        )
+    )
 
     # Timezone command
     Command.add_command(
         Command(
             command="#timezone",
             function=commands.timezone,
-            help_arguments={
-                "timezone": "The timezone to get the time in. For a list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"  # noqa E501
-            },
+            help_text="Get the time in a timezone. Pass the timezone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) as an argument. For example, `@bot@example.com #timezone America/New_York`",
         )
     )
 

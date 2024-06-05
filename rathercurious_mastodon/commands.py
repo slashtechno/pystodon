@@ -33,9 +33,7 @@ class RelativeReminder(peewee.Model):
 class RemindMe:
     """Functions related to reminding the user of posts"""
 
-    help_arguments = {
-        "remind_me_in": 'Remind you of a post in a specified time. For example, writing "in 5 minutes" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify "in" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/',
-    }
+    help_text = 'Remind you of a post in a specified time. For example, posting/replying with "@bot@example.com #remindme in 5 minutes" will remind you in 5 minutes. Whilst it may work without it, it is recommended to specify "in" before the time. Dateparser is used to parse the time, so it should be able to understand various formats. For more information, see https://dateparser.readthedocs.io/en/latest/'
 
     @staticmethod
     def remind_me_in(status: dict):
