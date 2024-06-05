@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "rathercurious-mastodon"
+name = "rathercurious_mastodon"
 version = "0.1.0"
 description = ""
 authors = ["slashtechno <77907286+slashtechno@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "rathercurious-mastodon"}]
+packages = [{include = "rathercurious_mastodon"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -16,18 +16,19 @@ pytz = "^2023.3"
 airportsdata = "^20230717"
 beautifulsoup4 = "^4.12.2"
 httpx = "^0.24.1"
+dateparser = "^1.2.0"
+peewee = "^3.17.5"
+psycopg2-binary = "^2.9.9"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
+ruff = "^0.4.7"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.ruff]
-# More than the default (88) of `black` to make comments less of a headache
-# Where possible, `black` will attempt to format to 88 characters
-# However, setting ruff to 135 will allow for longer lines that can't be auto-formatted
-line-length = 135
+
+[tool.ruff.lint]
 extend-select= ["FIX002"]

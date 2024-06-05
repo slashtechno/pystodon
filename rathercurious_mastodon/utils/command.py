@@ -1,7 +1,90 @@
+# https://adamj.eu/tech/2021/05/15/python-type-hints-future-annotations/
+from __future__ import annotations
 import re
+from datetime import datetime
 from . import utils
 
-#
+
+class CheckThis:
+    """
+    Every x seconds run function y.
+    """
+
+    checks = []
+
+    def __init__(self, function: callable, interval: int, *args, **kwargs):
+        self.function = function
+        self.interval = interval
+        self.function_args = args
+        self.function_kwargs = kwargs
+        self.last_ran = None
+
+    def add_check(self):
+        """
+        Add a check to the list of checks.
+        """
+        CheckThis.checks.append(self)
+
+    @classmethod
+    def run_checks(cls):
+        """
+        Run all the checks.
+        """
+        for check in cls.checks:
+            if check.last_ran is None or (datetime.now() - check.last_ran).seconds >= check.interval:
+                check.function(*check.function_args, **check.function_kwargs)
+                check.last_ran = datetime.now()
+
+    # Setters/Getters
+
+    @property
+    def interval(self):
+        """Get the interval"""
+        return self._interval
+
+    @interval.setter
+    def interval(self, interval):
+        """Set the interval if it is a positive integer"""
+        if not ((interval > 0) and isinstance(interval, int)):
+            raise ValueError("Interval must be a positive integer")
+        self._interval = interval
+
+    @property
+    def function(self):
+        """Get the function"""
+        return self._function
+
+    @function.setter
+    def function(self, function):
+        """
+        Set the function if it is callable.
+        This function will be passed one argument, the complete status object
+        This function should return a string to be posted as a reply
+        """
+        if callable(function):
+            self._function = function
+        else:
+            raise TypeError("Function must be callable")
+
+    @property
+    def function_kwargs(self):
+        """Get the function keyword arguments"""
+        return self._function_kwargs
+
+    @function_kwargs.setter
+    def function_kwargs(self, function_kwargs):
+        """Set the function keyword arguments"""
+        self._function_kwargs = function_kwargs
+
+    @property
+    def function_args(self):
+        """Get the function arguments"""
+        return self._function_args
+
+    @function_args.setter
+    def function_args(self, function_args):
+        """Set the function arguments"""
+        self._function_args = function_args
 
 
 class Command:
@@ -10,9 +93,7 @@ class Command:
     Intended to parse commands such as "@<bot> #<command> <arguments>".
     """
 
-    def __init__(
-        self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs
-    ):  # noqa E501
+    def __init__(self, hashtag, function: callable, help_arguments: dict = {}, *args, **kwargs):
         self.hashtag = hashtag
         self.function = function
         self.function_args = args
@@ -31,7 +112,7 @@ class Command:
         if re.search(r"^\w+$", hashtag):
             self._hashtag = hashtag
         else:
-            raise ValueError("Hashtag must match regex: ^\w+$")
+            raise ValueError("Hashtag must match regex: ^\\w+$")
 
     @property
     def function(self):
@@ -81,7 +162,7 @@ class Command:
         Set arguments and their help text.
         This is used for the help command
 
-        Please note, these arguments are not passed to the function, for that, use *args and **kwargs # noqa E501
+        Please note, these arguments are not passed to the function, for that, use *args and **kwargs
         """
         if isinstance(help_arguments, dict):
             self._help_arguments = help_arguments
@@ -93,13 +174,13 @@ class Command:
         return self.hashtag
 
     # class variables
-    # TODO: Prepend _ 
+    # TODO: Prepend _
     commands = []
 
     # classmethods
 
     @classmethod
-    def add_command(cls, command: "Command"):
+    def add_command(cls, command: Command):
         """
         Add a command to the list of commands.
         """
@@ -126,7 +207,7 @@ class Command:
         Please note that the status dict is passed as the first argument.
 
         You can provide a custom list of commands, but if you don't, it will use the class variable
-        The class variable is updated with Command.add_command() and Command.delete_command() # noqa E501
+        The class variable is updated with Command.add_command() and Command.delete_command()
 
         If the account sends a DM with the command, the bot will send a DM back.
         But if there isn't a mention, the account won't be able to see it
@@ -152,19 +233,17 @@ class Command:
                 for argument, help_text in command.help_arguments.items():
                     content += f"#{command.hashtag} {argument}: {help_text}\n"
             if always_mention:
-                # The Mastodon client Elk will seemingly not show the mention if it's on the first like  # noqa: E501
+                # The Mastodon client Elk will seemingly not show the mention if it's on the first like
                 return f"@{status['account']['acct']}\n{content}"
             else:
                 return content
         else:
             for command in commands:
                 if hashtag == command.hashtag:
-                    # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments # noqa E501
-                    content = command.function(
-                        status, *command.function_args, **command.function_kwargs
-                    )
+                    # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments
+                    content = command.function(status, *command.function_args, **command.function_kwargs)
                     if always_mention:
-                        # The Mastodon client Elk will seemingly not show the mention if it's on the first like  # noqa: E501
+                        # The Mastodon client Elk will seemingly not show the mention if it's on the first like
                         return f"@{status['account']['acct']}\n{content}"
                     else:
                         return content

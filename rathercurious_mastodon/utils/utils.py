@@ -1,8 +1,9 @@
 from bs4 import BeautifulSoup
 import re
 from mastodon import Mastodon, StreamListener
-from .command import Command
+from rathercurious_mastodon.utils.command import Command, CheckThis
 import trio
+
 
 class stream_listener:
     """
@@ -26,9 +27,7 @@ class stream_listener:
         self.always_mention = always_mention
         self.commands = commands
 
-        self.mastodon = Mastodon(
-            access_token=mastodon_access_token, api_base_url=mastodon_api_base_url
-        )
+        self.mastodon = Mastodon(access_token=mastodon_access_token, api_base_url=mastodon_api_base_url)
 
     class partially_configured_stream_listener(StreamListener):
         """
@@ -61,6 +60,8 @@ class stream_listener:
                     always_mention=self.always_mention,
                     commands=self.commands,
                 )  # noqa E501
+                if content is None:
+                    return
                 post = self.mastodon.status_post(
                     # Set the content of the status to the string returned above
                     content,
@@ -75,6 +76,7 @@ class stream_listener:
                 pass
             else:
                 pass
+
     def stream(self):
         """
         Stream statuses.
@@ -89,22 +91,25 @@ class stream_listener:
         trio.run(self.sleep_or_not)
 
     async def sleep_or_not(self):
-        '''Used to optionally run other code while the stream is running, in addition to optionally deleting posts when done'''
+        """Used to optionally run other code while the stream is running, in addition to optionally deleting posts when done"""
         try:
-            async with trio.open_nursery() as nursery:
-                nursery.start_soon(trio.sleep_forever)
-                nursery.start_soon(self.need_to_run)
+            # async with trio.open_nursery() as nursery:
+            #     # If I remember correctly, the reason sleep_forever is used is so the program doesn't exist killing the stream listener
+            #     nursery.start_soon(trio.sleep_forever)
+            #     async def loop_run_checks():
+            #         while True:
+            #             await CheckThis.run_checks()
+            #     nursery.start_soon(loop_run_checks)
+            while True:
+                CheckThis.run_checks()
         except KeyboardInterrupt:
             if self.delete_when_done:
                 for post in self.fully_configured_stream_listener.posts_to_delete:
                     self.mastodon.status_delete(post)
 
-    @staticmethod
-    async def need_to_run():
-        '''Code that needs to run while the stream is running'''
-        pass
 
 def return_raw_argument(status: dict):
+    # TODO: Allow for a character sequence other than "#" to be used
     """
     Return the raw arguments (everything after the hashtag) as a string.
     Uses utils.parse_html() to parse the HTML, adding newlines after every <p> tag
