@@ -9,4 +9,4 @@ COPY . .
 
 RUN poetry install
 
-ENTRYPOINT ["poetry", "run", "--", "rathercurious-mastodon"]
+ENTRYPOINT ["poetry", "run", "--", "pystodon"]

@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from datetime import datetime
-from rathercurious_mastodon.lib import utils
+from pystodon.lib import utils
 
 
 class CheckThis:
@@ -241,7 +241,7 @@ class Command:
                 if command == c.command:
                     # "*" unpacks the list of arguments, while "**" unpacks the dictionary of keyword arguments
                     content = c.function(
-                        status, *command.function_args, **command.function_kwargs
+                        status, *c.function_args, **c.function_kwargs
                     )
                     if always_mention:
                         # The Mastodon client Elk will seemingly not show the mention if it's on the first like

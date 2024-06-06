@@ -21,8 +21,8 @@ services:
       interval: 5s
     networks:
       - db-net
-  rathercurious-mastodon:
-    container_name: rathercurious-mastodon
+  pystodon:
+    container_name: pystodon
     # Build ./Dockerfile
     build:
       context: .
@@ -53,7 +53,7 @@ services:
 
 volumes:
   data:
-    name: rathercurious-mastodon
+    name: pystodon
 
 networks:
   db-net:

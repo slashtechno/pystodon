@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import re
 from mastodon import Mastodon, StreamListener
-from rathercurious_mastodon.lib.command import Command, CheckThis
+from pystodon.lib.command import Command, CheckThis
 import trio
 
 
