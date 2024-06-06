@@ -187,7 +187,7 @@ def weather(status: dict, weather_api_key: str):
         f"The temperature is {weather_c}°C ({weather_f}°F)",
         f"The temperature feels like {feelslike_c}°C ({feelslike_f}°F)",
     ]
-    logger.warning(
-        "Always mentioning is disabled and the user will not be mentioned, even though this is a DM"
-    ) if (args.always_mention is False) and (status["visibility"] == "direct") else None
+    # logger.warning(
+    #     "Always mentioning is disabled and the user will not be mentioned, even though this is a DM"
+    # ) if (args.always_mention is False) and (status["visibility"] == "direct") else None
     return "\n".join(lines)
