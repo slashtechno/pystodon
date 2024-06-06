@@ -36,6 +36,7 @@ class stream_listener:
         What events cause what actions.
         """
 
+        posts_to_delete = []
         def __init__(
             self,
             mastodon: Mastodon,
@@ -46,7 +47,6 @@ class stream_listener:
             self.mastodon = mastodon
             self.always_mention = always_mention
             self.commands = commands
-            self.posts_to_delete = []
 
         def on_update(self, status):
             # As far as I can tell, an update caused when you reblog or when an account you follow posts something  # noqa E501

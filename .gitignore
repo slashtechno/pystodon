@@ -4,3 +4,4 @@ example-output.txt
 result*
 tmp.txt
 *venv
+dist/

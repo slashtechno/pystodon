@@ -88,11 +88,13 @@ class RemindMe:
             api_base_url=cls.mastodon_api_base_url,
         )
         content = f"@{status['account']['acct']}\nHere's your reminder!"
-        mastodon.status_post(
+        post = mastodon.status_post(
             status=content,
             in_reply_to_id=status["id"],
             visibility=status["visibility"],
         )
+        utils.stream_listener.partially_configured_stream_listener.posts_to_delete.append(post["id"])
+
 
     # Getters and setters for mastodon_api_base_url and mastodon_access_token
     @property

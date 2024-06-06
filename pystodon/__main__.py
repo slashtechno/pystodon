@@ -100,5 +100,5 @@ def check_if_weather_api_key_is_valid(key: str):
     else:
         response.raise_for_status()
 
-
-main()
+if __name__ == "__main__":
+    main()
