@@ -3,10 +3,10 @@ from . import commands
 from peewee import PostgresqlDatabase
 
 
-from rathercurious_mastodon.lib.command import Command, CheckThis
-from rathercurious_mastodon.lib import utils
-from rathercurious_mastodon.utils.logging import logger
-from rathercurious_mastodon.utils.cli_args import args
+from pystodon.lib.command import Command, CheckThis
+from pystodon.lib import utils
+from pystodon.utils.logging import logger
+from pystodon.utils.cli_args import args
 
 # Global variables
 posts_to_delete = []

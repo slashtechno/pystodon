@@ -1,9 +1,9 @@
 import re
 import pytz
 import datetime
-from rathercurious_mastodon.lib import utils
-from rathercurious_mastodon.utils.logging import logger
-from rathercurious_mastodon.utils.cli_args import args
+from pystodon.lib import utils
+from pystodon.utils.logging import logger
+from pystodon.utils.cli_args import args
 import httpx
 import dateparser
 from mastodon import Mastodon

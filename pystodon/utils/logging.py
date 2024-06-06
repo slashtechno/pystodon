@@ -2,7 +2,7 @@ from sys import stderr
 
 from loguru import logger
 
-from rathercurious_mastodon.utils.cli_args import args
+from pystodon.utils.cli_args import args
 
 logging_file = stderr
 

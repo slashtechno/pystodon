@@ -1,4 +1,5 @@
-# rathercurious-mastodon  
+# Pystodon  
+<!-- Someone on the Python Discord (with the username briskettaco at the time) pitched the name since I was looking to move away from the name "rathercurious-mastodon" for this project. -->
 A hybrid between a framework for building Mastodon bots and a standalone bot  
 
 ## Usage  
@@ -34,14 +35,14 @@ A hybrid between a framework for building Mastodon bots and a standalone bot
     - [Poetry](https://python-poetry.org/docs/#installation) is a package manager for Python that manages dependencies and virtual environments  
 #### Installation
 1. Clone the repository  
-    - `git clone https://github.com/slashtechno/rathercurious-mastodon`  
+    - `git clone https://github.com/slashtechno/pystodon`  
 2. Change directory into the repository  
-    - `cd rathercurious-mastodon`  
+    - `cd pystodon`  
 3. Install dependencies  
     - `poetry install`  
 #### Running  
 1. Confirm the bot has been configured correctly  
-2. `poetry run python -m rathercurious-mastodon`  
+2. `poetry run python -m pystodon`  
 
 ### Docker  
 Recommended, especially if you want to use commands that depend on a database (e.g. `#remindme`)  
@@ -52,9 +53,9 @@ Recommended, especially if you want to use commands that depend on a database (e
     - [Docker Compose](https://docs.docker.com/compose/install/) is a tool for defining and running multi-container Docker applications  
 #### Running  
 1. Clone the repository  
-    - `git clone https://github.com/slashtechno/rathercurious-mastodon`
+    - `git clone https://github.com/slashtechno/pystodon`
 2. Change directory into the repository
-    - `cd rathercurious-mastodon`
+    - `cd pystodon`
 3. Confirm the bot has been configured correctly  
 4. `docker-compose up -d`  
     - The `-d` flag runs the containers in the background  
@@ -62,25 +63,25 @@ Recommended, especially if you want to use commands that depend on a database (e
 - Python (3.11+)
     - See the Poetry section for more information  
 
-<!-- ### PyPi
+### PyPi
 Not recommended as you can't modify the commands  
 #### Requirements
 - Python (3.11+)
     - Read the Poetry section for more information
 #### Installation
-1. `pip install rathercurious-mastodon`
+1. `pip install pystodon`
     - You may need to use `pip3` instead of `pip` depending on your system
-    - In addition, you may want to try `python -m pip install rathercurious-mastodon` or `python3 -m pip install rathercurious-mastodon` if the above commands do not work  
+    - In addition, you may want to try `python -m pip install pystodon` or `python3 -m pip install pystodon` if the above commands do not work  
 #### Running  
-- Assuming programs installed by `pip` are in your PATH, you can run the bot with `rathercurious-mastodon`   -->
+- Assuming programs installed by `pip` are in your PATH, you can run the bot with `pystodon`  
 
 
 ### Usage  
-- By default, the bot will use the commands configured in `rathercurious_mastodon/commands.py`
+- By default, the bot will use the commands configured in `pystodon/commands.py`
     - Commands include `#remindme`, `#timezone`, `#weather`, and `/test`
     - The command `help` (note the lack of a prefix) will list all available commands and can be used to get more information on a specific command  
     - These commands can be modified, removed, or added to suit your needs
-        - Look in `rathercurious_mastodon/__main__.py` to see how commands are added  
+        - Look in `pystodon/__main__.py` to see how commands are added  
         - When running with Docker, run `docker compose --build` to rebuild the image with the new commands
 - The syntax for commands is `@bot_username@example.com command [arguments]`
     - For example, `@rathercurious #remindme in 1h30m` 

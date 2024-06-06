@@ -3,8 +3,8 @@ import os
 import sys
 from pathlib import Path
 
-# Can't do from rathercurious_mastodon.utils import logger since that would cause a circular import
-from rathercurious_mastodon.utils.logging import logger
+# Can't do from pystodon.utils import logger since that would cause a circular import
+from pystodon.utils.logging import logger
 
 import dotenv
 
