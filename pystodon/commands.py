@@ -2,8 +2,6 @@ import re
 import pytz
 import datetime
 from pystodon.lib import utils
-from pystodon.utils.logging import logger
-from pystodon.utils.cli_args import args
 import httpx
 import dateparser
 from mastodon import Mastodon
