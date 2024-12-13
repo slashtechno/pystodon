@@ -1,6 +1,7 @@
 # Pystodon  
 <!-- Someone on the Python Discord (with the username briskettaco at the time) pitched the name since I was looking to move away from the name "rathercurious-mastodon" for this project. -->
-A hybrid between a framework for building Mastodon bots and a standalone bot. You can see this bot in action on [Mastodon](https://botsin.space/@rathercurious) (not always running).
+A hybrid between a framework for building Mastodon bots and a standalone bot. 
+<!-- You can see this bot in action on [Mastodon](https://botsin.space/@rathercurious) (not always running). -->
 
 ## Usage  
 ### Prerequisites  
